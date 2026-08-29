@@ -90,6 +90,8 @@ fun PlayerControls(
     onCycleResize: () -> Unit,
     onOpenTracks: () -> Unit,
     onBack: () -> Unit,
+    onInteraction: () -> Unit,
+    onScrubbingChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val playPause = rememberPlayPauseButtonState(player)
@@ -141,14 +143,14 @@ fun PlayerControls(
                 maxLines = 1,
                 modifier = Modifier.weight(1f).padding(start = 6.dp),
             )
-            IconButton(onClick = onOpenTracks) {
+            IconButton(onClick = { onInteraction(); onOpenTracks() }) {
                 Icon(Icons.Filled.Tune, contentDescription = "Audio, subtitle and video tracks", tint = TextPrimary)
             }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .clip(CircleShape)
-                    .clickable(onClick = onCycleResize)
+                    .clickable { onInteraction(); onCycleResize() }
                     .padding(horizontal = 10.dp, vertical = 8.dp),
             ) {
                 Icon(
@@ -176,7 +178,7 @@ fun PlayerControls(
                 icon = Icons.Filled.Replay10,
                 description = "Seek back 10 seconds",
                 enabled = seekBack.isEnabled,
-                onClick = seekBack::onClick,
+                onClick = { onInteraction(); seekBack.onClick() },
             )
             Box(
                 modifier = Modifier
@@ -184,7 +186,7 @@ fun PlayerControls(
                     .clip(CircleShape)
                     .background(ButtonFill)
                     .border(1.dp, ButtonStroke, CircleShape)
-                    .clickable(enabled = playPause.isEnabled, onClick = playPause::onClick),
+                    .clickable(enabled = playPause.isEnabled) { onInteraction(); playPause.onClick() },
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -198,7 +200,7 @@ fun PlayerControls(
                 icon = Icons.Filled.Forward10,
                 description = "Seek forward 10 seconds",
                 enabled = seekForward.isEnabled,
-                onClick = seekForward::onClick,
+                onClick = { onInteraction(); seekForward.onClick() },
             )
         }
 
@@ -228,11 +230,16 @@ fun PlayerControls(
                 fraction = shownFraction,
                 bufferedFraction = bufferedFraction,
                 enabled = hasDuration,
-                onScrub = { scrubFraction = it },
+                onScrub = {
+                    onInteraction()
+                    scrubFraction = it
+                },
                 onScrubFinished = { f ->
+                    onInteraction()
                     if (hasDuration) player.seekTo((f * duration).toLong())
                     scrubFraction = null
                 },
+                onScrubbingChange = onScrubbingChange,
             )
 
             Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
@@ -274,6 +281,7 @@ private fun Scrubber(
     enabled: Boolean,
     onScrub: (Float) -> Unit,
     onScrubFinished: (Float) -> Unit,
+    onScrubbingChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -292,13 +300,21 @@ private fun Scrubber(
                 if (enabled) {
                     detectHorizontalDragGestures(
                         onDragStart = { offset ->
+                            onScrubbingChange(true)
                             onScrub((offset.x / size.width).coerceIn(0f, 1f))
                         },
                         onHorizontalDrag = { change, _ ->
                             change.consume()
                             onScrub((change.position.x / size.width).coerceIn(0f, 1f))
                         },
-                        onDragEnd = { onScrubFinished(fraction) },
+                        onDragEnd = {
+                            onScrubbingChange(false)
+                            onScrubFinished(fraction)
+                        },
+                        onDragCancel = {
+                            onScrubbingChange(false)
+                            onScrubFinished(fraction)
+                        },
                     )
                 }
             },

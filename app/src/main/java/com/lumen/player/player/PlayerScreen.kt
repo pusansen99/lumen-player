@@ -265,8 +265,11 @@ private fun PlayerContainer(
     val (resizeLabel, contentScale) = RESIZE_MODES[resizeIndex]
 
     var controlsVisible by remember { mutableStateOf(true) }
-    LaunchedEffect(controlsVisible, uri) {
-        if (controlsVisible) {
+    var scrubbing by remember { mutableStateOf(false) }
+    var interactionTick by remember { mutableIntStateOf(0) }
+    // Auto-hide 3s after the controls appear or the last interaction; never while scrubbing.
+    LaunchedEffect(controlsVisible, scrubbing, interactionTick, uri) {
+        if (controlsVisible && !scrubbing) {
             delay(AUTO_HIDE_MS)
             controlsVisible = false
         }
@@ -433,6 +436,8 @@ private fun PlayerContainer(
                 onCycleResize = { resizeIndex = (resizeIndex + 1) % RESIZE_MODES.size },
                 onOpenTracks = { showTracks = true },
                 onBack = onBack,
+                onInteraction = { interactionTick++ },
+                onScrubbingChange = { scrubbing = it; interactionTick++ },
                 modifier = Modifier.fillMaxSize(),
             )
         }
