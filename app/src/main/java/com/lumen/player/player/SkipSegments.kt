@@ -54,7 +54,7 @@ class SkipSegmentsStore {
         for (candidate in candidateUrls(mediaUrl)) {
             val body = runCatching {
                 client.newCall(Request.Builder().url(candidate).build()).execute().use { resp ->
-                    if (resp.isSuccessful) resp.body?.string() else null
+                    if (resp.isSuccessful) resp.body.string() else null
                 }
             }.getOrNull() ?: continue
             val parsed = runCatching { parse(body) }.getOrNull()

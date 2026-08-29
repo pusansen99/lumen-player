@@ -26,9 +26,9 @@ import androidx.compose.material.icons.filled.BrightnessMedium
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -289,7 +289,7 @@ fun TrackSelectionSheet(
                             .background(Color(0x33FFFFFF), RoundedCornerShape(2.5.dp)),
                     )
                 }
-                TabRow(selectedTabIndex = tab) {
+                PrimaryTabRow(selectedTabIndex = tab) {
                     types.forEachIndexed { index, (label, _) ->
                         Tab(selected = tab == index, onClick = { tab = index }, text = { Text(label) })
                     }

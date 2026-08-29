@@ -76,7 +76,7 @@ private fun audio(f: Format?): String {
         MimeTypes.AUDIO_AC4 -> "Dolby AC-4"
         MimeTypes.AUDIO_TRUEHD -> "Dolby TrueHD"
         MimeTypes.AUDIO_DTS_HD -> "DTS-HD"
-        MimeTypes.AUDIO_DTS_X -> "DTS:X"
+        MimeTypes.AUDIO_DTS_UHD_P2 -> "DTS:X"
         MimeTypes.AUDIO_DTS -> "DTS"
         MimeTypes.AUDIO_AAC -> "AAC"
         MimeTypes.AUDIO_OPUS -> "Opus"

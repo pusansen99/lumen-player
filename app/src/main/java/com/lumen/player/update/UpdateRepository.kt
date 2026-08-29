@@ -36,7 +36,7 @@ class UpdateRepository(
 
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) return@withContext null // 404 = no releases yet
-            val json = JSONObject(response.body?.string().orEmpty())
+            val json = JSONObject(response.body.string())
 
             val tag = json.optString("tag_name").ifBlank { return@withContext null }
             if (!isNewer(remote = tag, current = currentVersionName)) return@withContext null
