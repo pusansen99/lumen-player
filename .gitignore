@@ -7,3 +7,8 @@ local.properties
 captures/
 .externalNativeBuild/
 .cxx/
+
+# signing keystores are never committed (CI uses a secret)
+*.jks
+*.keystore
+keystore/

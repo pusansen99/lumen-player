@@ -1,7 +1,7 @@
 name: Release
 
 # Manual only: run from the Actions tab (or `gh workflow run Release -f version=0.6.0`).
-# Tags main's current HEAD, builds the APK (version is derived from the tag),
+# Tags main's current HEAD, builds a signed APK (version is derived from the tag),
 # and publishes a GitHub release with notes from the commits since the last tag.
 on:
   workflow_dispatch:
@@ -41,6 +41,25 @@ jobs:
             echo "tag v${{ inputs.version }} already exists"; exit 1
           fi
 
+      - name: Require new commits since the last tag
+        run: |
+          PREV="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+          if [ -z "$PREV" ]; then
+            echo "No previous tag — first release, proceeding."
+            exit 0
+          fi
+          N="$(git rev-list "${PREV}..HEAD" --count)"
+          echo "$N commit(s) on main since ${PREV}"
+          if [ "$N" -eq 0 ]; then
+            echo "::error::main has no new commits since ${PREV}; nothing to release."
+            exit 1
+          fi
+
+      - name: Require signing secret
+        run: |
+          [ -n "${{ secrets.SIGNING_KEYSTORE_B64 }}" ] \
+            || { echo "::error::SIGNING_KEYSTORE_B64 is not set"; exit 1; }
+
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
@@ -50,6 +69,13 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
+      - name: Decode signing keystore
+        env:
+          KS_B64: ${{ secrets.SIGNING_KEYSTORE_B64 }}
+        run: |
+          echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          echo "SIGNING_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+
       - name: Tag main
         run: |
           git config user.name  "github-actions[bot]"
@@ -57,7 +83,11 @@ jobs:
           git tag -a "v${{ inputs.version }}" -m "Lumen ${{ inputs.version }}"
           git push origin "v${{ inputs.version }}"
 
-      - name: Build APK
+      - name: Build signed APK
+        env:
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: ./gradlew :app:assembleDebug --stacktrace
 
       - name: Stage APK
@@ -83,9 +113,3 @@ jobs:
           name: "Lumen ${{ inputs.version }}"
           body_path: NOTES.md
           files: "lumen_player_v${{ inputs.version }}.apk"
-
-      - name: Signing note
-        run: |
-          echo "::notice::APK is debug-signed with an ephemeral key. Until a stable"
-          echo "::notice::keystore is wired in, the in-app updater cannot install this"
-          echo "::notice::release over a differently-signed build."
