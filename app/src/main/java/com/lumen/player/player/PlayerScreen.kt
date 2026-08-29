@@ -41,6 +41,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.media3.common.MediaItem
@@ -60,9 +61,22 @@ private val RESIZE_MODES: List<Pair<String, ContentScale>> = listOf(
 )
 
 @Composable
-fun PlayerScreen(modifier: Modifier = Modifier) {
+fun PlayerScreen(
+    modifier: Modifier = Modifier,
+    externalUri: String? = null,
+    onExternalUriConsumed: () -> Unit = {},
+) {
     var sourceUri by rememberSaveable { mutableStateOf<String?>(null) }
     var sourceLabel by rememberSaveable { mutableStateOf("") }
+
+    // A video handed in from another app ("Open with" / share) plays immediately.
+    LaunchedEffect(externalUri) {
+        if (externalUri != null) {
+            sourceUri = externalUri
+            sourceLabel = externalUri.toUri().lastPathSegment ?: "Now playing"
+            onExternalUriConsumed()
+        }
+    }
 
     Box(modifier = modifier.fillMaxSize().background(Color.Black)) {
         val uri = sourceUri
