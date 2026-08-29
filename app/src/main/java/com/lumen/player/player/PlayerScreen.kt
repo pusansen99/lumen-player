@@ -3,6 +3,7 @@ package com.lumen.player.player
 import android.app.Activity
 import android.content.pm.ActivityInfo
 import android.media.AudioManager
+import android.view.HapticFeedbackConstants
 import android.view.WindowManager
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -51,6 +52,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -75,6 +77,12 @@ private const val FORMAT_BADGE_MS = 4_500L
 private const val RESUME_MIN_MS = 3_000L
 private const val POSITION_SAVE_INTERVAL_MS = 5_000L
 private const val SCRUB_FULL_WIDTH_MS = 120_000f
+
+/** Only the outer 35% of each side reacts to brightness/volume drags; the centre is left for taps. */
+private const val EDGE_ZONE_FRACTION = 0.35f
+
+/** Haptic tick every time brightness/volume moves this much. */
+private const val HAPTIC_STEP = 0.05f
 
 /** Cycled by the resize button: how the video fills the screen. */
 private val RESIZE_MODES: List<Pair<String, ContentScale>> = listOf(
@@ -209,6 +217,7 @@ private fun PlayerContainer(
 
     val context = LocalContext.current
     val activity = context as? Activity
+    val view = LocalView.current
     val audioManager = remember { context.getSystemService(AudioManager::class.java) }
 
     // Load, restoring the saved position for this URI.
@@ -341,21 +350,51 @@ private fun PlayerContainer(
                 )
             }
             .pointerInput(uri) {
-                var onLeft = true
+                // -1 = left edge (brightness), 1 = right edge (volume), 0 = centre (ignored).
+                var zone = 0
+                var startValue = 0f
+                var accumulated = 0f
+                var lastHapticValue = 0f
+                val deadZonePx = 16.dp.toPx()
+
                 detectVerticalDragGestures(
-                    onDragStart = { offset -> onLeft = offset.x < size.width / 2f },
+                    onDragStart = { offset ->
+                        zone = when {
+                            offset.x < size.width * EDGE_ZONE_FRACTION -> -1
+                            offset.x > size.width * (1f - EDGE_ZONE_FRACTION) -> 1
+                            else -> 0
+                        }
+                        accumulated = 0f
+                        startValue = if (zone == -1) brightness else volume
+                        lastHapticValue = startValue
+                    },
                     onVerticalDrag = { change, dragAmount ->
-                        change.consume()
-                        val step = -dragAmount / size.height // drag up => positive
-                        if (onLeft) {
-                            brightness = (brightness + step).coerceIn(0.01f, 1f)
-                            activity?.window?.let { w ->
-                                w.attributes = w.attributes.apply { screenBrightness = brightness }
+                        if (zone != 0) {
+                            change.consume()
+                            accumulated += -dragAmount // drag up => positive
+                            val effective = when {
+                                accumulated > deadZonePx -> accumulated - deadZonePx
+                                accumulated < -deadZonePx -> accumulated + deadZonePx
+                                else -> 0f
                             }
-                            hud = GestureHud.Brightness(brightness)
-                        } else {
-                            volume = audioManager?.setMusicVolumeFraction(volume + step) ?: volume
-                            hud = GestureHud.Volume(volume)
+                            val target =
+                                (startValue + effective / (size.height * 0.7f)).coerceIn(0f, 1f)
+                            val applied = if (zone == -1) {
+                                brightness = target.coerceAtLeast(0.01f)
+                                activity?.window?.let { w ->
+                                    w.attributes = w.attributes.apply { screenBrightness = brightness }
+                                }
+                                hud = GestureHud.Brightness(brightness)
+                                brightness
+                            } else {
+                                volume = audioManager?.setMusicVolumeFraction(target) ?: target
+                                hud = GestureHud.Volume(volume)
+                                volume
+                            }
+                            if (abs(applied - lastHapticValue) >= HAPTIC_STEP) {
+                                view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                                lastHapticValue = applied
+                            }
                         }
                     },
                 )
