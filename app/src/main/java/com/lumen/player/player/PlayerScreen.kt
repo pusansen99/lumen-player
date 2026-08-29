@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -31,16 +32,28 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.ui.compose.PlayerSurface
 import androidx.media3.ui.compose.SURFACE_TYPE_SURFACE_VIEW
+import androidx.media3.ui.compose.modifiers.resizeWithContentScale
+import androidx.media3.ui.compose.state.rememberPresentationState
 import kotlinx.coroutines.delay
 
 private const val AUTO_HIDE_MS = 3_000L
+
+/** Cycled by the resize button: how the video fills the screen. */
+private val RESIZE_MODES: List<Pair<String, ContentScale>> = listOf(
+    "Fit" to ContentScale.Fit,
+    "Fill" to ContentScale.Crop,
+    "Stretch" to ContentScale.FillBounds,
+)
 
 @Composable
 fun PlayerScreen(modifier: Modifier = Modifier) {
@@ -123,13 +136,17 @@ private fun PlayerContainer(
     onBack: () -> Unit,
 ) {
     val player = rememberManagedExoPlayer()
+    val presentationState = rememberPresentationState(player)
 
     LaunchedEffect(uri) {
         player.setMediaItem(MediaItem.fromUri(uri))
         player.prepare()
     }
 
-    KeepScreenOn()
+    PlayerWindowEffects()
+
+    var resizeIndex by rememberSaveable { mutableIntStateOf(0) }
+    val (resizeLabel, contentScale) = RESIZE_MODES[resizeIndex]
 
     var controlsVisible by remember { mutableStateOf(true) }
     LaunchedEffect(controlsVisible, uri) {
@@ -144,17 +161,20 @@ private fun PlayerContainer(
             .fillMaxSize()
             .background(Color.Black)
             .clickable { controlsVisible = !controlsVisible },
+        contentAlignment = Alignment.Center,
     ) {
         PlayerSurface(
             player = player,
             surfaceType = SURFACE_TYPE_SURFACE_VIEW,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.resizeWithContentScale(contentScale, presentationState.videoSizeDp),
         )
 
         if (controlsVisible) {
             PlayerControls(
                 player = player,
                 title = title,
+                resizeLabel = resizeLabel,
+                onCycleResize = { resizeIndex = (resizeIndex + 1) % RESIZE_MODES.size },
                 onBack = onBack,
                 modifier = Modifier.fillMaxSize(),
             )
@@ -162,14 +182,27 @@ private fun PlayerContainer(
     }
 }
 
+/**
+ * While the player is on screen: keep the display awake and go immersive (hide the status bar and
+ * navigation bar; a swipe from the edge reveals them transiently). Both are reverted on dispose.
+ */
 @Composable
-private fun KeepScreenOn() {
+private fun PlayerWindowEffects() {
     val context = LocalContext.current
     DisposableEffect(Unit) {
         val window = (context as? Activity)?.window
         window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
+        val insetsController = window?.let {
+            WindowInsetsControllerCompat(it, it.decorView)
+        }
+        insetsController?.systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        insetsController?.hide(WindowInsetsCompat.Type.systemBars())
+
         onDispose {
             window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            insetsController?.show(WindowInsetsCompat.Type.systemBars())
         }
     }
 }

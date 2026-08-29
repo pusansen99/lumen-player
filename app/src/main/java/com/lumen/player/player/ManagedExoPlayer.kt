@@ -1,5 +1,6 @@
 package com.lumen.player.player
 
+import androidx.annotation.OptIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -12,6 +13,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 
@@ -19,6 +21,7 @@ import androidx.media3.exoplayer.ExoPlayer
  * Builds an [ExoPlayer] tuned for broad codec support, keeps it in sync with the composition
  * lifecycle (pause when the app goes to the background) and releases it when it leaves composition.
  */
+@OptIn(UnstableApi::class)
 @Composable
 fun rememberManagedExoPlayer(): ExoPlayer {
     val context = LocalContext.current

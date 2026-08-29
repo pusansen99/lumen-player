@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AspectRatio
 import androidx.compose.material.icons.filled.Forward10
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -23,6 +24,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -67,6 +69,8 @@ private fun rememberPlaybackState(player: Player): Int {
 fun PlayerControls(
     player: Player,
     title: String,
+    resizeLabel: String,
+    onCycleResize: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -94,8 +98,20 @@ fun PlayerControls(
                 color = LocalContentColor.current,
                 fontSize = 15.sp,
                 maxLines = 1,
-                modifier = Modifier.padding(start = 4.dp),
+                modifier = Modifier.weight(1f).padding(start = 4.dp),
             )
+            TextButton(onClick = onCycleResize) {
+                Icon(
+                    Icons.Filled.AspectRatio,
+                    contentDescription = "Change video size",
+                    modifier = Modifier.size(18.dp),
+                )
+                Text(
+                    text = resizeLabel,
+                    fontSize = 13.sp,
+                    modifier = Modifier.padding(start = 6.dp),
+                )
+            }
         }
 
         if (playbackState == Player.STATE_BUFFERING) {
