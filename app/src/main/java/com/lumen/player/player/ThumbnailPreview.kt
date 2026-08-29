@@ -88,7 +88,7 @@ class ThumbnailStore {
         for (candidate in candidateVttUrls(mediaUrl)) {
             val body = runCatching {
                 client.newCall(Request.Builder().url(candidate).build()).execute().use { resp ->
-                    if (resp.isSuccessful) resp.body?.string() else null
+                    if (resp.isSuccessful) resp.body.string() else null
                 }
             }.getOrNull() ?: continue
             val track = parseWebVtt(body, baseUrl = candidate)
@@ -102,7 +102,7 @@ class ThumbnailStore {
         return withContext(Dispatchers.IO) {
             val bytes = runCatching {
                 client.newCall(Request.Builder().url(url).build()).execute().use { resp ->
-                    if (resp.isSuccessful) resp.body?.bytes() else null
+                    if (resp.isSuccessful) resp.body.bytes() else null
                 }
             }.getOrNull() ?: return@withContext null
             val bitmap = runCatching { BitmapFactory.decodeByteArray(bytes, 0, bytes.size) }.getOrNull()
