@@ -49,6 +49,8 @@ import androidx.media3.ui.compose.PlayerSurface
 import androidx.media3.ui.compose.SURFACE_TYPE_SURFACE_VIEW
 import androidx.media3.ui.compose.modifiers.resizeWithContentScale
 import androidx.media3.ui.compose.state.rememberPresentationState
+import com.lumen.player.update.UpdateDialog
+import com.lumen.player.update.rememberUpdateController
 import kotlinx.coroutines.delay
 
 private const val AUTO_HIDE_MS = 3_000L
@@ -68,6 +70,10 @@ fun PlayerScreen(
 ) {
     var sourceUri by rememberSaveable { mutableStateOf<String?>(null) }
     var sourceLabel by rememberSaveable { mutableStateOf("") }
+
+    val updateController = rememberUpdateController()
+    LaunchedEffect(Unit) { updateController.checkOnce() }
+    UpdateDialog(updateController)
 
     // A video handed in from another app ("Open with" / share) plays immediately.
     LaunchedEffect(externalUri) {

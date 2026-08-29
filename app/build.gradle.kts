@@ -12,8 +12,11 @@ android {
         applicationId = "com.lumen.player"
         minSdk = 36
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0-phase1"
+        versionCode = 2
+        versionName = "0.2.0"
+
+        // GitHub repo the in-app updater queries for the latest release.
+        buildConfigField("String", "UPDATE_REPO", "\"pusansen99/lumen-player\"")
     }
 
     buildTypes {
@@ -33,6 +36,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -64,4 +68,6 @@ dependencies {
     implementation(libs.media3.datasource.okhttp)
     implementation(libs.media3.ui.compose)
     implementation(libs.media3.common)
+
+    implementation(libs.okhttp)
 }
