@@ -31,9 +31,27 @@ android {
         buildConfigField("String", "UPDATE_REPO", "\"pusansen99/lumen-player\"")
     }
 
+    // Only present in CI, populated from the SIGNING_* secrets by the Release workflow.
+    // Unset locally -> debug builds keep using the machine's ~/.android/debug.keystore.
+    val ciKeystore = providers.environmentVariable("SIGNING_KEYSTORE_PATH").orNull
+    if (ciKeystore != null) {
+        signingConfigs {
+            create("ci") {
+                storeFile = file(ciKeystore)
+                storePassword = providers.environmentVariable("SIGNING_STORE_PASSWORD").orNull
+                keyAlias = providers.environmentVariable("SIGNING_KEY_ALIAS").orNull
+                keyPassword = providers.environmentVariable("SIGNING_KEY_PASSWORD").orNull
+            }
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfigs.findByName("ci")?.let { signingConfig = it }
+        }
         release {
             isMinifyEnabled = false
+            signingConfigs.findByName("ci")?.let { signingConfig = it }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
