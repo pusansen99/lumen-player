@@ -35,3 +35,8 @@ jobs:
       - uses: android-actions/setup-android@v4
 
       - uses: gradle/actions/dependency-submission@v6
+        env:
+          # Only report what the app actually ships — not the Gradle plugin
+          # classpath (Develocity's Netty, AGP tooling, etc.).
+          DEPENDENCY_GRAPH_INCLUDE_CONFIGURATIONS: "^(debug|release)RuntimeClasspath$"
+          DEPENDENCY_GRAPH_INCLUDE_PROJECTS: "^:app$"
