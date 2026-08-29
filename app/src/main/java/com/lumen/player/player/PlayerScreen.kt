@@ -431,9 +431,11 @@ private fun PlayerContainer(
             )
         }
 
-        hud?.let { GestureHudOverlay(it, modifier = Modifier.fillMaxSize()) }
-        seekHud?.let { SeekFeedback(it, modifier = Modifier.fillMaxSize()) }
-        scrubTargetMs?.let {
+        if (error == null) {
+            hud?.let { GestureHudOverlay(it, modifier = Modifier.fillMaxSize()) }
+            seekHud?.let { SeekFeedback(it, modifier = Modifier.fillMaxSize()) }
+        }
+        scrubTargetMs?.takeIf { error == null }?.let {
             ScrubPreview(
                 targetMs = it,
                 durationMs = player.duration.coerceAtLeast(0L),

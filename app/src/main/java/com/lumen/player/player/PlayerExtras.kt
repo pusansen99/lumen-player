@@ -64,12 +64,17 @@ sealed interface GestureHud {
     data class Volume(override val fraction: Float) : GestureHud
 }
 
-/** Small centered HUD shown briefly while the user swipes for brightness or volume. */
+/** HUD shown briefly at the relevant edge while the user swipes: brightness left, volume right. */
 @Composable
 fun GestureHudOverlay(hud: GestureHud, modifier: Modifier = Modifier) {
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+    val alignment = when (hud) {
+        is GestureHud.Brightness -> Alignment.CenterStart
+        is GestureHud.Volume -> Alignment.CenterEnd
+    }
+    Box(modifier = modifier, contentAlignment = alignment) {
         Column(
             modifier = Modifier
+                .padding(horizontal = 40.dp)
                 .background(Color(0xB3000000), RoundedCornerShape(16.dp))
                 .padding(horizontal = 18.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
