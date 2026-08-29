@@ -1,5 +1,7 @@
 # Lumen Player
 
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/pusansen99)
+
 An Android video player built on AndroidX Media3 (ExoPlayer). Cinematic-dark UI.
 
 Paste a stream URL or open a local video file; it plays fullscreen. Also registers as a
@@ -97,3 +99,8 @@ app/src/main/java/com/lumen/player/
 ```
 
 Design canvas: see `design/` (the approved UI/UX `.dc.html` artboards).
+
+## Support
+
+If Lumen is useful to you, you can
+[buy me a coffee](https://buymeacoffee.com/pusansen99).
