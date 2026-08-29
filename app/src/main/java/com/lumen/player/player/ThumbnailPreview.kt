@@ -127,7 +127,7 @@ class ThumbnailStore {
 private val TIME_RE = Regex("""(?:(\d+):)?(\d{1,2}):(\d{2})(?:\.(\d{1,3}))?""")
 private val XYWH_RE = Regex("""#xywh=(\d+),(\d+),(\d+),(\d+)""", RegexOption.IGNORE_CASE)
 
-private fun parseTime(s: String): Long? {
+internal fun parseTime(s: String): Long? {
     val m = TIME_RE.matchEntire(s.trim()) ?: return null
     val (h, mm, ss, ms) = m.destructured
     val hours = h.toLongOrNull() ?: 0L
@@ -136,7 +136,7 @@ private fun parseTime(s: String): Long? {
 }
 
 /** Minimal WebVTT thumbnails parser: time-range blocks whose payload is an image URL (+ #xywh). */
-private fun parseWebVtt(content: String, baseUrl: String): ThumbnailTrack? {
+internal fun parseWebVtt(content: String, baseUrl: String): ThumbnailTrack? {
     if (!content.trimStart().startsWith("WEBVTT")) return null
     val cues = mutableListOf<ThumbnailCue>()
     val blocks = content.replace("\r\n", "\n").split(Regex("\n\\s*\n"))
