@@ -18,12 +18,12 @@ val gitVersionCode: Int =
 
 android {
     namespace = "com.lumen.player"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.lumen.player"
         minSdk = 36
-        targetSdk = 36
+        targetSdk = 37
         versionCode = gitVersionCode
         versionName = gitVersionName
 
