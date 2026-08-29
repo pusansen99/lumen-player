@@ -4,6 +4,18 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+/** Version comes from git: name = nearest tag (v0.4.0 -> 0.4.0), code = commit count. */
+fun gitOutput(vararg args: String): String =
+    providers.exec {
+        commandLine("git", *args)
+        isIgnoreExitValue = true
+    }.standardOutput.asText.get().trim()
+
+val gitVersionName: String =
+    gitOutput("describe", "--tags", "--abbrev=0").removePrefix("v").ifBlank { "0.0.0" }
+val gitVersionCode: Int =
+    gitOutput("rev-list", "--count", "HEAD").toIntOrNull() ?: 1
+
 android {
     namespace = "com.lumen.player"
     compileSdk = 36
@@ -12,8 +24,8 @@ android {
         applicationId = "com.lumen.player"
         minSdk = 36
         targetSdk = 36
-        versionCode = 4
-        versionName = "0.4.0"
+        versionCode = gitVersionCode
+        versionName = gitVersionName
 
         // GitHub repo the in-app updater queries for the latest release.
         buildConfigField("String", "UPDATE_REPO", "\"pusansen99/lumen-player\"")
