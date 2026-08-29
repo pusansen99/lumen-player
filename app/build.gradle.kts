@@ -29,6 +29,9 @@ android {
 
         // GitHub repo the in-app updater queries for the latest release.
         buildConfigField("String", "UPDATE_REPO", "\"pusansen99/lumen-player\"")
+
+        // minSdk 36 devices are all arm64; other ABIs are dead weight.
+        ndk { abiFilters += "arm64-v8a" }
     }
 
     // Only present in CI, populated from the SIGNING_* secrets by the Release workflow.
@@ -50,11 +53,27 @@ android {
             signingConfigs.findByName("ci")?.let { signingConfig = it }
         }
         release {
-            isMinifyEnabled = false
-            signingConfigs.findByName("ci")?.let { signingConfig = it }
+            isMinifyEnabled = true
+            isShrinkResources = true
+            // Sign with the CI key when present, else the local debug key (same cert,
+            // so the in-app updater stays compatible with the release history).
+            signingConfig = signingConfigs.findByName("ci")
+                ?: signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
+            )
+        }
+    }
+
+    packaging {
+        resources {
+            excludes += setOf(
+                "/META-INF/{AL2.0,LGPL2.1}",
+                "/META-INF/*.version",
+                "/META-INF/*.kotlin_module",
+                "/kotlin/**",
+                "DebugProbesKt.bin",
             )
         }
     }

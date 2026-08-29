@@ -31,12 +31,12 @@ git tag -a "$TAG" -m "Lumen ${VERSION#v}"
 # main is protected and advances only through merged PRs; push just the tag.
 git push origin "$TAG"
 
-echo "==> building APK (version comes from the tag)"
+echo "==> building release APK (version comes from the tag)"
 JAVA_HOME="${JAVA_HOME:-$(/usr/libexec/java_home -v 21 2>/dev/null || true)}" \
-  ./gradlew :app:assembleDebug
+  ./gradlew :app:assembleRelease
 
 OUT="$(mktemp -d)/${APK_NAME}"
-cp app/build/outputs/apk/debug/app-debug.apk "$OUT"
+cp app/build/outputs/apk/release/app-release.apk "$OUT"
 
 echo "==> creating GitHub release $TAG"
 printf '%s\n\n%s\n' "$RANGE_NOTE" "$NOTES" | \

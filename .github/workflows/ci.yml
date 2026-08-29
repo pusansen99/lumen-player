@@ -35,7 +35,15 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
 
       - name: Assemble + test + lint
-        run: ./gradlew assembleDebug testDebugUnitTest lintDebug --stacktrace
+        # assembleRelease runs R8 + resource shrinking, so a shrink regression fails a PR.
+        run: ./gradlew assembleDebug assembleRelease testDebugUnitTest lintDebug --stacktrace
+
+      - name: APK sizes
+        run: |
+          for v in debug release; do
+            f="app/build/outputs/apk/$v/app-$v.apk"
+            [ -f "$f" ] && printf '%s\t%s\n' "$v" "$(du -h "$f" | cut -f1)"
+          done
 
       - name: Report version
         run: echo "versionName from git = $(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo 0.0.0)"
