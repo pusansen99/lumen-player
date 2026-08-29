@@ -239,6 +239,8 @@ private fun PlayerContainer(
             modifier = Modifier.resizeWithContentScale(contentScale, presentationState.videoSizeDp),
         )
 
+        SubtitleOverlay(player = player, modifier = Modifier.fillMaxSize())
+
         if (controlsVisible) {
             PlayerControls(
                 player = player,
