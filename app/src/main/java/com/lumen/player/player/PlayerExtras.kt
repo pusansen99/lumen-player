@@ -3,6 +3,7 @@ package com.lumen.player.player
 import android.media.AudioManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -30,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,9 +41,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.roundToInt
 import androidx.media3.common.C
 import androidx.media3.common.Format
 import androidx.media3.common.Player
@@ -230,6 +236,10 @@ fun TrackSelectionSheet(
         }
     }
 
+    val configuration = LocalConfiguration.current
+    val maxSheetHeight = (configuration.screenHeightDp * 0.62f).dp
+    var dragOffsetPx by remember { mutableFloatStateOf(0f) }
+
     Box(
         modifier = modifier
             .background(Color(0x99000000))
@@ -241,17 +251,36 @@ fun TrackSelectionSheet(
             shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
             modifier = Modifier
                 .fillMaxWidth()
+                .heightIn(max = maxSheetHeight)
+                .offset { IntOffset(0, dragOffsetPx.roundToInt()) }
                 .pointerInput(Unit) { detectTapGestures { /* swallow */ } },
         ) {
             Column(modifier = Modifier.navigationBarsPadding().padding(bottom = 8.dp)) {
+                // Drag this handle down to dismiss.
                 Box(
                     modifier = Modifier
-                        .padding(vertical = 10.dp)
-                        .align(Alignment.CenterHorizontally)
-                        .width(36.dp)
-                        .height(4.dp)
-                        .background(Color(0x33FFFFFF), RoundedCornerShape(2.dp)),
-                )
+                        .fillMaxWidth()
+                        .pointerInput(Unit) {
+                            detectVerticalDragGestures(
+                                onVerticalDrag = { _, dy ->
+                                    dragOffsetPx = (dragOffsetPx + dy).coerceAtLeast(0f)
+                                },
+                                onDragEnd = {
+                                    if (dragOffsetPx > 160f) onDismiss() else dragOffsetPx = 0f
+                                },
+                                onDragCancel = { dragOffsetPx = 0f },
+                            )
+                        },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .padding(vertical = 12.dp)
+                            .width(40.dp)
+                            .height(5.dp)
+                            .background(Color(0x33FFFFFF), RoundedCornerShape(2.5.dp)),
+                    )
+                }
                 TabRow(selectedTabIndex = tab) {
                     types.forEachIndexed { index, (label, _) ->
                         Tab(selected = tab == index, onClick = { tab = index }, text = { Text(label) })
@@ -260,7 +289,7 @@ fun TrackSelectionSheet(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(max = 320.dp)
+                        .weight(1f, fill = false)
                         .verticalScroll(rememberScrollState())
                         .padding(vertical = 8.dp),
                 ) {

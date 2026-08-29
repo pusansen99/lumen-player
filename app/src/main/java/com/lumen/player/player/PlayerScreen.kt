@@ -1,6 +1,7 @@
 package com.lumen.player.player
 
 import android.app.Activity
+import android.content.pm.ActivityInfo
 import android.media.AudioManager
 import android.view.WindowManager
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -176,6 +177,16 @@ private fun PlayerContainer(
 
     PlayerWindowEffects()
 
+    // Video plays in landscape; restore the previous orientation on exit.
+    DisposableEffect(activity) {
+        val previous = activity?.requestedOrientation
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        onDispose {
+            activity?.requestedOrientation =
+                previous ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+    }
+
     var resizeIndex by rememberSaveable { mutableIntStateOf(0) }
     val (resizeLabel, contentScale) = RESIZE_MODES[resizeIndex]
 
@@ -239,7 +250,12 @@ private fun PlayerContainer(
             modifier = Modifier.resizeWithContentScale(contentScale, presentationState.videoSizeDp),
         )
 
-        SubtitleOverlay(player = player, modifier = Modifier.fillMaxSize())
+        SubtitleOverlay(
+            player = player,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = if (controlsVisible) 88.dp else 20.dp),
+        )
 
         if (controlsVisible) {
             PlayerControls(

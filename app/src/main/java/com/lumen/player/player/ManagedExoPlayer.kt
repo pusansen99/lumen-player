@@ -39,7 +39,13 @@ fun rememberManagedExoPlayer(): ExoPlayer {
             .setSeekBackIncrementMs(10_000)
             .setSeekForwardIncrementMs(10_000)
             .build()
-            .apply { playWhenReady = true }
+            .apply {
+                playWhenReady = true
+                // Subtitles start off; the user opts in from the track picker.
+                trackSelectionParameters = trackSelectionParameters.buildUpon()
+                    .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
+                    .build()
+            }
     }
 
     DisposableEffect(lifecycleOwner) {
