@@ -14,10 +14,12 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
@@ -52,8 +54,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
@@ -69,6 +73,7 @@ import com.lumen.player.update.UpdateDialog
 import com.lumen.player.update.rememberUpdateController
 import kotlinx.coroutines.delay
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 private const val AUTO_HIDE_MS = 3_000L
 private const val HUD_HIDE_MS = 700L
@@ -214,6 +219,7 @@ private fun PlayerContainer(
     val tracks = rememberTracks(player)
     val playbackState = rememberPlaybackState(player)
     val error = rememberPlayerError(player)
+    val thumbnailState = rememberThumbnailState(uri)
 
     val context = LocalContext.current
     val activity = context as? Activity
@@ -435,12 +441,25 @@ private fun PlayerContainer(
             hud?.let { GestureHudOverlay(it, modifier = Modifier.fillMaxSize()) }
             seekHud?.let { SeekFeedback(it, modifier = Modifier.fillMaxSize()) }
         }
-        scrubTargetMs?.takeIf { error == null }?.let {
-            ScrubPreview(
-                targetMs = it,
-                durationMs = player.duration.coerceAtLeast(0L),
-                modifier = Modifier.fillMaxSize(),
-            )
+        scrubTargetMs?.takeIf { error == null }?.let { targetMs ->
+            val durationMs = player.duration.coerceAtLeast(1L)
+            BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                val density = LocalDensity.current
+                val bubbleWidthPx = with(density) { 172.dp.toPx() }
+                val trackWidthPx = constraints.maxWidth.toFloat()
+                val fraction = (targetMs.toFloat() / durationMs).coerceIn(0f, 1f)
+                val xPx = (fraction * trackWidthPx - bubbleWidthPx / 2f)
+                    .coerceIn(8f, (trackWidthPx - bubbleWidthPx - 8f).coerceAtLeast(8f))
+                ThumbnailBubble(
+                    state = thumbnailState,
+                    positionMs = targetMs,
+                    timeLabel = formatTime(targetMs),
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(bottom = 96.dp)
+                        .offset { IntOffset(xPx.roundToInt(), 0) },
+                )
+            }
         }
 
         if (resumedFromMs > 0L) {
@@ -518,21 +537,6 @@ private fun SeekFeedback(hud: SeekHud, modifier: Modifier = Modifier) {
                 fontSize = 13.sp,
                 modifier = Modifier.padding(start = 6.dp),
             )
-        }
-    }
-}
-
-@Composable
-private fun ScrubPreview(targetMs: Long, durationMs: Long, modifier: Modifier = Modifier) {
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        Column(
-            modifier = Modifier
-                .background(Color(0xCC000000), RoundedCornerShape(10.dp))
-                .padding(horizontal = 16.dp, vertical = 10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(text = formatTime(targetMs), color = Color.White, fontSize = 16.sp)
-            Text(text = formatTime(durationMs), color = Color(0xFFA1A1AA), fontSize = 12.sp)
         }
     }
 }
