@@ -100,6 +100,11 @@ app/src/main/java/com/lumen/player/
 
 Design canvas: see `design/` (the approved UI/UX `.dc.html` artboards).
 
+## License
+
+MIT — see [LICENSE](LICENSE). Bundled libraries (AndroidX Media3, OkHttp,
+Jetpack Compose) are Apache-2.0.
+
 ## Support
 
 If Lumen is useful to you, you can
