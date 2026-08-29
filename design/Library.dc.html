@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+*{box-sizing:border-box;}
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Manrope:wght@400;500;600;700&display=swap');
+body{margin:0;font-family:'Manrope',system-ui,-apple-system,sans-serif;background:#0B0B0D;color:#F5F5F7;-webkit-font-smoothing:antialiased;}
+a{color:#4C8DFF;text-decoration:none;} a:hover{color:#8FB6FF;}
+h1,h2,h3{font-family:'Sora','Manrope',system-ui,sans-serif;margin:0;}
+.seg{display:flex;background:#151518;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:3px;}
+.seg > div{flex:1;text-align:center;padding:8px 0;font-size:13px;font-weight:600;border-radius:8px;color:#A1A1AA;}
+.seg > div.on{background:#2A2A30;color:#F5F5F7;}
+.grp{font-size:12px;color:#71717A;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;}
+.item{display:flex;align-items:center;gap:12px;padding:9px 0;}
+.tn{width:64px;height:38px;border-radius:7px;background:radial-gradient(120% 100% at 70% 15%,#2a3746 0%,#141922 50%,#080a0e 85%);flex:0 0 auto;}
+.meta{font-size:11px;color:#A1A1AA;font-weight:500;}
+</style>
+</helmet>
+<div style="width:390px;height:844px;position:relative;overflow:hidden;background:#0B0B0D;display:flex;flex-direction:column;">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px 10px;">
+    <h1 style="font-size:22px;font-weight:700;">Library</h1>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#F5F5F7" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F5F5F7" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </div>
+  </div>
+
+  <div style="padding:6px 18px 14px;">
+    <div class="seg"><div class="on">On device</div><div>Added links</div></div>
+  </div>
+
+  <div style="flex:1;overflow:hidden;padding:0 18px;display:flex;flex-direction:column;gap:18px;">
+
+    <div style="display:flex;flex-direction:column;gap:2px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <span class="grp">Camera &middot; 12</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="item">
+        <div class="tn"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:600;">VID_20240612_camera.mp4</div>
+          <div class="meta">1080p &middot; 04:12 &middot; 248 MB</div>
+        </div>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+      </div>
+      <div class="item">
+        <div class="tn" style="background:radial-gradient(120% 100% at 40% 20%,#33262f 0%,#181016 55%,#0a0608 85%);"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:600;">IMG_4471.mov</div>
+          <div class="meta">4K &middot; 06:05 &middot; 1.4 GB</div>
+        </div>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:2px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <span class="grp">Downloads &middot; 5</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="item">
+        <div class="tn" style="background:radial-gradient(120% 100% at 60% 10%,#26323a 0%,#12181c 55%,#080a0c 85%);"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:600;">screen-record-final.webm</div>
+          <div class="meta">1080p &middot; 11:37 &middot; 512 MB</div>
+        </div>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+      </div>
+      <div class="item">
+        <div class="tn" style="background:radial-gradient(120% 100% at 50% 25%,#2c2c33 0%,#151519 55%,#08080a 85%);"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:600;">lecture-07-compression.mkv</div>
+          <div class="meta">720p &middot; 52:18 &middot; 690 MB</div>
+        </div>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="position:absolute;right:18px;bottom:92px;width:52px;height:52px;border-radius:16px;background:#4C8DFF;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(76,141,255,0.35);">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#08131f" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="6" x2="12" y2="18"/><line x1="6" y1="12" x2="18" y2="12"/></svg>
+  </div>
+
+  <div style="display:flex;justify-content:space-around;align-items:center;padding:10px 0 22px;border-top:1px solid rgba(255,255,255,0.07);">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#71717A;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+      <span style="font-size:11px;font-weight:600;">Home</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#71717A;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <span style="font-size:11px;font-weight:600;">Search</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#4C8DFF;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4C8DFF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/></svg>
+      <span style="font-size:11px;font-weight:600;">Library</span>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

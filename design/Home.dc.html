@@ -1,0 +1,116 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+*{box-sizing:border-box;}
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Manrope:wght@400;500;600;700&display=swap');
+body{margin:0;font-family:'Manrope',system-ui,-apple-system,sans-serif;background:#0B0B0D;color:#F5F5F7;-webkit-font-smoothing:antialiased;}
+a{color:#4C8DFF;text-decoration:none;} a:hover{color:#8FB6FF;}
+h1,h2,h3{font-family:'Sora','Manrope',system-ui,sans-serif;margin:0;}
+.row{display:flex;gap:12px;overflow:hidden;}
+.sec-title{font-family:'Sora',sans-serif;font-size:15px;font-weight:600;color:#F5F5F7;letter-spacing:0.2px;}
+.thumb{position:relative;border-radius:12px;overflow:hidden;background:radial-gradient(120% 100% at 70% 15%,#2a3746 0%,#141922 50%,#080a0e 85%);flex:0 0 auto;}
+.dur{position:absolute;right:6px;bottom:6px;background:rgba(0,0,0,0.72);color:#F5F5F7;font-size:11px;font-weight:600;padding:2px 6px;border-radius:6px;}
+.badge{position:absolute;left:6px;top:6px;background:rgba(0,0,0,0.6);color:#D4D4D8;font-size:10px;font-weight:600;padding:2px 6px;border-radius:6px;display:flex;align-items:center;gap:4px;}
+.cap{font-size:12px;color:#A1A1AA;font-weight:500;}
+.ttl{font-size:13px;color:#F5F5F7;font-weight:600;line-height:1.3;}
+</style>
+</helmet>
+<div style="width:390px;height:844px;position:relative;overflow:hidden;background:#0B0B0D;display:flex;flex-direction:column;">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px 10px;">
+    <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:20px;letter-spacing:0.5px;">LUMEN</div>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F5F5F7" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16.1A5 5 0 0 1 5.9 20M2 12.05A9 9 0 0 1 9.95 20M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"/><line x1="2" y1="20" x2="2.01" y2="20"/></svg>
+      <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#4C8DFF,#8FB6FF);"></div>
+    </div>
+  </div>
+
+  <div style="flex:1;overflow:hidden;padding:6px 0 0;display:flex;flex-direction:column;gap:22px;">
+
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="padding:0 18px;" class="sec-title">Continue watching</div>
+      <div class="row" style="padding:0 18px;">
+        <div style="display:flex;flex-direction:column;gap:7px;width:250px;flex:0 0 auto;">
+          <div class="thumb" style="width:250px;height:141px;">
+            <span class="dur">18 min left</span>
+            <div style="position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,0.18);"><div style="width:62%;height:100%;background:#4C8DFF;"></div></div>
+          </div>
+          <div class="ttl">Night Drive</div>
+          <div class="cap">Catalog &middot; 4K HDR</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px;width:250px;flex:0 0 auto;">
+          <div class="thumb" style="width:250px;height:141px;background:radial-gradient(120% 100% at 30% 20%,#3a2f2a 0%,#1a1512 50%,#0a0806 85%);">
+            <span class="dur">42 min left</span>
+            <div style="position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,0.18);"><div style="width:24%;height:100%;background:#4C8DFF;"></div></div>
+          </div>
+          <div class="ttl">The Coast Road &mdash; Ep. 2</div>
+          <div class="cap">On device</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="padding:0 18px;" class="sec-title">Trending in catalog</div>
+      <div class="row" style="padding:0 18px;">
+        <div style="display:flex;flex-direction:column;gap:6px;width:160px;flex:0 0 auto;">
+          <div class="thumb" style="width:160px;height:90px;"><span class="dur">1:48:12</span></div>
+          <div class="ttl">Aurora</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;width:160px;flex:0 0 auto;">
+          <div class="thumb" style="width:160px;height:90px;background:radial-gradient(120% 100% at 60% 10%,#26323a 0%,#12181c 55%,#080a0c 85%);"><span class="dur">54:02</span></div>
+          <div class="ttl">Deep Field</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;width:160px;flex:0 0 auto;">
+          <div class="thumb" style="width:160px;height:90px;background:radial-gradient(120% 100% at 40% 25%,#33262f 0%,#181016 55%,#0a0608 85%);"><span class="dur">1:12:40</span></div>
+          <div class="ttl">Static Bloom</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="padding:0 18px;" class="sec-title">On this device</div>
+      <div class="row" style="padding:0 18px;">
+        <div style="display:flex;flex-direction:column;gap:6px;width:160px;flex:0 0 auto;">
+          <div class="thumb" style="width:160px;height:90px;">
+            <span class="badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#D4D4D8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>Device</span>
+            <span class="dur">04:12</span>
+          </div>
+          <div class="ttl">VID_20240612_camera.mp4</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;width:160px;flex:0 0 auto;">
+          <div class="thumb" style="width:160px;height:90px;background:radial-gradient(120% 100% at 50% 20%,#2c2c33 0%,#151519 55%,#08080a 85%);">
+            <span class="badge">Device</span><span class="dur">11:37</span>
+          </div>
+          <div class="ttl">screen-record-final.webm</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="display:flex;justify-content:space-around;align-items:center;padding:10px 0 22px;border-top:1px solid rgba(255,255,255,0.07);background:#0B0B0D;">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#4C8DFF;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4C8DFF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+      <span style="font-size:11px;font-weight:600;">Home</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#71717A;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <span style="font-size:11px;font-weight:600;">Search</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#71717A;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/></svg>
+      <span style="font-size:11px;font-weight:600;">Library</span>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+*{box-sizing:border-box;}
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Manrope:wght@400;500;600;700&display=swap');
+body{margin:0;font-family:'Manrope',system-ui,-apple-system,sans-serif;background:#050506;color:#F5F5F7;-webkit-font-smoothing:antialiased;}
+</style>
+</helmet>
+<div style="width:844px;height:390px;position:relative;overflow:hidden;background:radial-gradient(120% 140% at 72% 18%,#26313f 0%,#12161d 46%,#050506 82%);">
+
+  <div style="position:absolute;inset:0;background:radial-gradient(120% 120% at 50% 50%,rgba(0,0,0,0) 45%,rgba(0,0,0,0.4) 100%);"></div>
+
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:10px;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.12);padding:12px 18px;border-radius:999px;">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#F5F5F7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 7.5-2"/></svg>
+    <span style="font-size:12px;font-weight:600;color:#F5F5F7;">Screen locked &mdash; tap the lock again to unlock</span>
+  </div>
+
+  <div style="position:absolute;top:14px;left:0;right:0;height:2px;background:linear-gradient(90deg,rgba(76,141,255,0) 0%,rgba(76,141,255,0.5) 50%,rgba(76,141,255,0) 100%);"></div>
+
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+*{box-sizing:border-box;}
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Manrope:wght@400;500;600;700&display=swap');
+body{margin:0;font-family:'Manrope',system-ui,-apple-system,sans-serif;background:#0B0B0D;color:#F5F5F7;-webkit-font-smoothing:antialiased;}
+a{color:#4C8DFF;text-decoration:none;} a:hover{color:#8FB6FF;}
+h1,h2,h3{font-family:'Sora','Manrope',system-ui,sans-serif;margin:0;}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;font-size:12px;font-weight:600;background:#1E1E22;color:#D4D4D8;border:1px solid rgba(255,255,255,0.06);}
+.chip.on{background:#4C8DFF;color:#08131f;border-color:transparent;}
+.thumb{position:relative;border-radius:12px;overflow:hidden;background:radial-gradient(120% 100% at 70% 15%,#2a3746 0%,#141922 50%,#080a0e 85%);}
+.dur{position:absolute;right:6px;bottom:6px;background:rgba(0,0,0,0.72);font-size:11px;font-weight:600;padding:2px 6px;border-radius:6px;}
+.src{font-size:11px;color:#A1A1AA;font-weight:600;}
+.ttl{font-size:13px;font-weight:600;line-height:1.3;}
+</style>
+</helmet>
+<div style="width:390px;height:844px;position:relative;overflow:hidden;background:#0B0B0D;display:flex;flex-direction:column;">
+
+  <div style="display:flex;align-items:center;gap:12px;padding:14px 18px 12px;">
+    <div style="flex:1;display:flex;align-items:center;gap:10px;background:#151518;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:11px 13px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <span style="font-size:14px;color:#F5F5F7;font-weight:500;">night drive</span>
+      <span style="flex:1;"></span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </div>
+    <span style="font-size:14px;color:#4C8DFF;font-weight:600;">Cancel</span>
+  </div>
+
+  <div style="display:flex;gap:8px;padding:0 18px 14px;overflow:hidden;">
+    <span class="chip on">All</span>
+    <span class="chip">Catalog</span>
+    <span class="chip">On device</span>
+    <span class="chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D4D4D8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>Sort</span>
+  </div>
+
+  <div style="flex:1;overflow:hidden;padding:0 18px;">
+    <div style="font-size:12px;color:#71717A;font-weight:600;margin-bottom:12px;">8 results</div>
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 12px;">
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div class="thumb" style="height:96px;"><span class="dur">1:42:00</span></div>
+        <div class="ttl">Night Drive</div>
+        <div class="src">Catalog &middot; 4K HDR</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div class="thumb" style="height:96px;background:radial-gradient(120% 100% at 40% 20%,#33262f 0%,#181016 55%,#0a0608 85%);"><span class="dur">03:58</span></div>
+        <div class="ttl">night-drive-bts.mp4</div>
+        <div class="src">On device</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div class="thumb" style="height:96px;background:radial-gradient(120% 100% at 60% 10%,#26323a 0%,#12181c 55%,#080a0c 85%);"><span class="dur">12:20</span></div>
+        <div class="ttl">Night Drive &mdash; Trailer</div>
+        <div class="src">Catalog</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div class="thumb" style="height:96px;background:radial-gradient(120% 100% at 30% 30%,#2c2c33 0%,#151519 55%,#08080a 85%);"><span class="dur">LIVE</span></div>
+        <div class="ttl">Night Drive (live stream)</div>
+        <div class="src">Added link &middot; HLS</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div class="thumb" style="height:96px;background:radial-gradient(120% 100% at 70% 20%,#2a3746 0%,#141922 50%,#080a0e 85%);"><span class="dur">48:30</span></div>
+        <div class="ttl">Driving at Night: A Study</div>
+        <div class="src">Catalog</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div class="thumb" style="height:96px;background:radial-gradient(120% 100% at 50% 15%,#3a2f2a 0%,#1a1512 55%,#0a0806 85%);"><span class="dur">06:05</span></div>
+        <div class="ttl">IMG_4471.mov</div>
+        <div class="src">On device</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:space-around;align-items:center;padding:10px 0 22px;border-top:1px solid rgba(255,255,255,0.07);">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#71717A;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+      <span style="font-size:11px;font-weight:600;">Home</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#4C8DFF;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4C8DFF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <span style="font-size:11px;font-weight:600;">Search</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#71717A;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/></svg>
+      <span style="font-size:11px;font-weight:600;">Library</span>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

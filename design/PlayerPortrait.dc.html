@@ -1,0 +1,79 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+*{box-sizing:border-box;}
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Manrope:wght@400;500;600;700&display=swap');
+body{margin:0;font-family:'Manrope',system-ui,-apple-system,sans-serif;background:#0B0B0D;color:#F5F5F7;-webkit-font-smoothing:antialiased;}
+h1,h2,h3{font-family:'Sora','Manrope',system-ui,sans-serif;margin:0;}
+.act{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11px;color:#D4D4D8;font-weight:600;}
+</style>
+</helmet>
+<div style="width:390px;height:844px;position:relative;overflow:hidden;background:#0B0B0D;display:flex;flex-direction:column;">
+
+  <div style="position:relative;height:220px;flex:0 0 auto;background:radial-gradient(120% 150% at 70% 15%,#26313f 0%,#12161d 46%,#050506 82%);">
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.55) 0%,rgba(0,0,0,0) 34%,rgba(0,0,0,0) 60%,rgba(0,0,0,0.7) 100%);"></div>
+    <div style="position:absolute;top:12px;left:14px;right:14px;display:flex;align-items:center;gap:12px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F5F5F7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      <span style="flex:1;font-family:'Sora',sans-serif;font-size:13px;font-weight:600;">Night Drive</span>
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#F5F5F7" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+    </div>
+    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:34px;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F5F5F7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4 4 12l7 8"/><path d="M4 12h11a5 5 0 0 1 0 10h-1"/></svg>
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="#F5F5F7"><rect x="5" y="4" width="4.5" height="16" rx="1"/><rect x="14.5" y="4" width="4.5" height="16" rx="1"/></svg>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F5F5F7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4l7 8-7 8"/><path d="M20 12H9a5 5 0 0 0 0 10h1"/></svg>
+    </div>
+    <div style="position:absolute;left:14px;right:14px;bottom:10px;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;">24:10</span>
+      <div style="flex:1;position:relative;height:10px;display:flex;align-items:center;">
+        <div style="position:absolute;left:0;right:0;height:3px;border-radius:999px;background:rgba(255,255,255,0.22);"></div>
+        <div style="position:absolute;left:0;width:41%;height:3px;border-radius:999px;background:#4C8DFF;"></div>
+        <div style="position:absolute;left:calc(41% - 5px);width:10px;height:10px;border-radius:50%;background:#4C8DFF;"></div>
+      </div>
+      <span style="font-size:11px;font-weight:600;color:#A1A1AA;font-variant-numeric:tabular-nums;">1:42:00</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F5F5F7" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+    </div>
+  </div>
+
+  <div style="flex:1;overflow:hidden;padding:16px 20px 0;display:flex;flex-direction:column;gap:18px;">
+
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <h1 style="font-size:19px;font-weight:700;">Night Drive</h1>
+      <div style="font-size:12px;color:#A1A1AA;font-weight:600;">2024 &middot; 1h 42m &middot; 4K HDR &middot; Catalog</div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;padding:2px 4px;">
+      <div class="act"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F5F5F7" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>Like</div>
+      <div class="act"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F5F5F7" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>Save</div>
+      <div class="act"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F5F5F7" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>Share</div>
+      <div class="act"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F5F5F7" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 15h4M14 15h4M7 10h.01M17 10h.01"/></svg>Captions</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:600;">Up next</div>
+      <div style="display:flex;gap:12px;align-items:center;">
+        <div style="width:104px;height:59px;border-radius:8px;background:radial-gradient(120% 100% at 60% 10%,#26323a 0%,#12181c 55%,#080a0c 85%);flex:0 0 auto;position:relative;"><span style="position:absolute;right:5px;bottom:5px;background:rgba(0,0,0,0.72);font-size:10px;font-weight:600;padding:1px 5px;border-radius:5px;">1:44:00</span></div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;">Night Drive &mdash; Commentary</div><div style="font-size:11px;color:#A1A1AA;font-weight:600;margin-top:3px;">Director track</div></div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center;">
+        <div style="width:104px;height:59px;border-radius:8px;background:radial-gradient(120% 100% at 40% 20%,#33262f 0%,#181016 55%,#0a0608 85%);flex:0 0 auto;position:relative;"><span style="position:absolute;right:5px;bottom:5px;background:rgba(0,0,0,0.72);font-size:10px;font-weight:600;padding:1px 5px;border-radius:5px;">22:40</span></div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;">Making of Night Drive</div><div style="font-size:11px;color:#A1A1AA;font-weight:600;margin-top:3px;">Catalog</div></div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center;">
+        <div style="width:104px;height:59px;border-radius:8px;background:radial-gradient(120% 100% at 55% 15%,#2c2c33 0%,#151519 55%,#08080a 85%);flex:0 0 auto;position:relative;"><span style="position:absolute;right:5px;bottom:5px;background:rgba(0,0,0,0.72);font-size:10px;font-weight:600;padding:1px 5px;border-radius:5px;">48:30</span></div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;">Driving at Night: A Study</div><div style="font-size:11px;color:#A1A1AA;font-weight:600;margin-top:3px;">Catalog</div></div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

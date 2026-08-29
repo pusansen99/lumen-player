@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+*{box-sizing:border-box;}
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Manrope:wght@400;500;600;700&display=swap');
+body{margin:0;font-family:'Manrope',system-ui,-apple-system,sans-serif;background:#050506;color:#F5F5F7;-webkit-font-smoothing:antialiased;}
+h1,h2,h3{font-family:'Sora','Manrope',system-ui,sans-serif;margin:0;}
+</style>
+</helmet>
+<div style="width:844px;height:390px;position:relative;overflow:hidden;background:#080809;">
+
+  <div style="position:absolute;top:16px;left:20px;">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F5F5F7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+  </div>
+
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:14px;max-width:420px;text-align:center;">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#F5A524" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <h2 style="font-size:18px;font-weight:700;">Can&rsquo;t play this video</h2>
+    <p style="margin:0;font-size:13px;color:#A1A1AA;line-height:1.5;">The stream may be offline or in a format this device doesn&rsquo;t support.<br><span style="color:#71717A;">Source returned HTTP 404 &middot; nightdrive.m3u8</span></p>
+    <div style="display:flex;gap:12px;margin-top:4px;">
+      <div style="display:flex;align-items:center;gap:8px;background:#4C8DFF;color:#08131f;font-family:'Sora',sans-serif;font-weight:700;font-size:13px;padding:11px 20px;border-radius:12px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#08131f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>Retry
+      </div>
+      <div style="background:transparent;border:1px solid rgba(255,255,255,0.16);color:#F5F5F7;font-family:'Sora',sans-serif;font-weight:600;font-size:13px;padding:11px 20px;border-radius:12px;">Details</div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

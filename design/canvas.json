@@ -1,0 +1,32 @@
+{
+  "pages": [
+    { "id": "page-1", "name": "Browse" },
+    { "id": "page-2", "name": "Player" },
+    { "id": "page-3", "name": "Mini / PiP / Style" }
+  ],
+  "artboards": [
+    { "file": "Home.dc.html", "x": 0, "y": 0, "w": 390, "h": 844, "page": "page-1" },
+    { "file": "Search.dc.html", "x": 470, "y": 0, "w": 390, "h": 844, "page": "page-1" },
+    { "file": "Library.dc.html", "x": 940, "y": 0, "w": 390, "h": 844, "page": "page-1" },
+    { "file": "AddURL.dc.html", "x": 1410, "y": 0, "w": 390, "h": 844, "page": "page-1" },
+    { "file": "Detail.dc.html", "x": 1880, "y": 0, "w": 390, "h": 844, "page": "page-1" },
+
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 844, "h": 390, "page": "page-2", "is_interactive": false },
+    { "file": "PlayerPortrait.dc.html", "x": 924, "y": 0, "w": 390, "h": 844, "page": "page-2" },
+    { "file": "PlayerBuffering.dc.html", "x": 0, "y": 964, "w": 844, "h": 390, "page": "page-2" },
+    { "file": "PlayerError.dc.html", "x": 924, "y": 964, "w": 844, "h": 390, "page": "page-2" },
+    { "file": "PlayerLocked.dc.html", "x": 1848, "y": 964, "w": 844, "h": 390, "page": "page-2" },
+    { "file": "PlayerGestures.dc.html", "x": 0, "y": 1434, "w": 844, "h": 390, "page": "page-2" },
+    { "file": "PlayerMenus.dc.html", "x": 924, "y": 1434, "w": 844, "h": 390, "page": "page-2" },
+
+    { "file": "MiniPlayer.dc.html", "x": 0, "y": 0, "w": 390, "h": 260, "page": "page-3" },
+    { "file": "PiP.dc.html", "x": 470, "y": 0, "w": 360, "h": 220, "page": "page-3" },
+    { "file": "StyleTile.dc.html", "x": 0, "y": 420, "w": 900, "h": 1640, "page": "page-3" }
+  ],
+  "annotations": [
+    { "id": "note-browse", "x": 0, "y": -110, "w": 620, "text": "BROWSE FLOW  ·  Home → Search → Library → Add URL → Detail. Bottom nav = Home / Search / Library. Player opens as a full-screen route over any tab and collapses to the mini-player.", "page": "page-1" },
+    { "id": "note-player", "x": 0, "y": -140, "w": 700, "text": "PLAYER FLOW  ·  Main = landscape default (auto-hide controls, 3s). Right column: portrait player. Row 2: buffering / error / locked. Row 3: gesture map + playback settings sheet.", "page": "page-2" },
+    { "id": "note-style", "x": 0, "y": -110, "w": 600, "text": "SYSTEM  ·  Mini-player + PiP behaviours, plus the style tile: palette, accent A/B decision, type ramp, control specs, scrim + motion.", "page": "page-3" }
+  ],
+  "launch": { "view": "canvas", "page": "page-1" }
+}

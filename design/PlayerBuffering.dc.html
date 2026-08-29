@@ -1,0 +1,51 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+*{box-sizing:border-box;}
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Manrope:wght@400;500;600;700&display=swap');
+body{margin:0;font-family:'Manrope',system-ui,-apple-system,sans-serif;background:#050506;color:#F5F5F7;-webkit-font-smoothing:antialiased;}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</helmet>
+<div style="width:844px;height:390px;position:relative;overflow:hidden;background:radial-gradient(120% 140% at 72% 18%,#20272f 0%,#101318 46%,#050506 82%);">
+
+  <div style="position:absolute;inset:0;background:rgba(0,0,0,0.35);"></div>
+
+  <div style="position:absolute;top:16px;left:20px;right:20px;display:flex;align-items:center;gap:14px;opacity:0.4;">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F5F5F7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    <div style="flex:1;"><div style="font-family:'Sora',sans-serif;font-size:15px;font-weight:600;">Night Drive</div><div style="font-size:11px;color:#A1A1AA;font-weight:600;margin-top:2px;">Chapter 3 &middot; Catalog</div></div>
+  </div>
+
+  <div style="position:absolute;top:16px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;background:rgba(0,0,0,0.55);border:1px solid rgba(255,255,255,0.1);padding:6px 12px;border-radius:999px;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F5A524" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+    <span style="font-size:11px;font-weight:600;color:#F5A524;">Poor connection</span>
+  </div>
+
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:14px;">
+    <div style="width:52px;height:52px;border-radius:50%;border:3px solid rgba(255,255,255,0.16);border-top-color:#4C8DFF;animation:spin 0.9s linear infinite;"></div>
+    <span style="font-size:12px;font-weight:600;color:#D4D4D8;">Buffering&hellip; 43%</span>
+  </div>
+
+  <div style="position:absolute;left:0;right:0;bottom:0;padding:0 22px 16px;opacity:0.35;">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span style="font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;">24:10</span>
+      <div style="flex:1;position:relative;height:14px;display:flex;align-items:center;">
+        <div style="position:absolute;left:0;right:0;height:3px;border-radius:999px;background:rgba(255,255,255,0.22);"></div>
+        <div style="position:absolute;left:0;width:45%;height:3px;border-radius:999px;background:rgba(255,255,255,0.4);"></div>
+        <div style="position:absolute;left:0;width:41%;height:3px;border-radius:999px;background:#4C8DFF;"></div>
+      </div>
+      <span style="font-size:12px;font-weight:600;color:#A1A1AA;font-variant-numeric:tabular-nums;">1:42:00</span>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+*{box-sizing:border-box;}
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Manrope:wght@400;500;600;700&display=swap');
+body{margin:0;font-family:'Manrope',system-ui,-apple-system,sans-serif;background:#050506;color:#F5F5F7;-webkit-font-smoothing:antialiased;}
+h1,h2,h3{font-family:'Sora','Manrope',system-ui,sans-serif;margin:0;}
+.tab{font-size:12px;font-weight:600;color:#A1A1AA;padding-bottom:8px;}
+.tab.on{color:#F5F5F7;border-bottom:2px solid #4C8DFF;}
+.opt{display:flex;align-items:center;justify-content:space-between;padding:11px 0;font-size:13px;font-weight:500;color:#D4D4D8;}
+.opt.sel{color:#F5F5F7;font-weight:700;}
+</style>
+</helmet>
+<div style="width:844px;height:390px;position:relative;overflow:hidden;background:radial-gradient(120% 140% at 60% 18%,#20272f 0%,#101318 46%,#050506 82%);">
+
+  <div style="position:absolute;inset:0;background:rgba(0,0,0,0.5);"></div>
+
+  <div style="position:absolute;right:0;top:0;bottom:0;width:340px;background:#151518;border-left:1px solid rgba(255,255,255,0.08);padding:18px 22px;display:flex;flex-direction:column;gap:4px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <h3 style="font-size:15px;font-weight:700;">Playback settings</h3>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </div>
+    <div style="display:flex;gap:20px;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:6px;">
+      <span class="tab on">Quality</span><span class="tab">Audio</span><span class="tab">Subtitles</span><span class="tab">Speed</span>
+    </div>
+    <div class="opt sel">Auto <span style="font-size:11px;color:#A1A1AA;font-weight:600;">1080p now</span> <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4C8DFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+    <div class="opt">2160p <span style="font-size:11px;color:#71717A;font-weight:600;">HDR &middot; 18 Mbps</span></div>
+    <div class="opt">1080p <span style="font-size:11px;color:#71717A;font-weight:600;">8 Mbps</span></div>
+    <div class="opt">720p <span style="font-size:11px;color:#71717A;font-weight:600;">4 Mbps</span></div>
+    <div class="opt">480p <span style="font-size:11px;color:#71717A;font-weight:600;">1.5 Mbps</span></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0 0;border-top:1px solid rgba(255,255,255,0.08);margin-top:6px;">
+      <span style="font-size:13px;font-weight:600;">Data saver</span>
+      <div style="width:38px;height:22px;border-radius:999px;background:#2A2A30;position:relative;"><div style="position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#71717A;"></div></div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+*{box-sizing:border-box;}
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Manrope:wght@400;500;600;700&display=swap');
+body{margin:0;font-family:'Manrope',system-ui,-apple-system,sans-serif;background:#0B0B0D;color:#F5F5F7;-webkit-font-smoothing:antialiased;}
+h1,h2,h3{font-family:'Sora','Manrope',system-ui,sans-serif;margin:0;}
+.card{background:#151518;border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:24px;}
+.lbl{font-family:'Sora',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;color:#71717A;margin-bottom:16px;}
+.sw{display:flex;flex-direction:column;gap:6px;}
+.chip{width:100%;height:56px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);}
+.hex{font-size:11px;color:#A1A1AA;font-weight:600;font-variant-numeric:tabular-nums;}
+.nm{font-size:12px;color:#F5F5F7;font-weight:600;}
+.spec{display:flex;justify-content:space-between;font-size:13px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+.spec span:first-child{color:#A1A1AA;font-weight:500;}
+.spec span:last-child{color:#F5F5F7;font-weight:600;font-variant-numeric:tabular-nums;}
+</style>
+</helmet>
+<div style="width:900px;min-height:1240px;background:#0B0B0D;padding:40px;display:flex;flex-direction:column;gap:24px;">
+
+  <div style="display:flex;flex-direction:column;gap:6px;">
+    <h1 style="font-size:30px;font-weight:700;">LUMEN &mdash; Style tile</h1>
+    <div style="font-size:13px;color:#A1A1AA;font-weight:500;">Cinematic dark. Poster art carries the color; chrome stays out of the way.</div>
+  </div>
+
+  <div class="card">
+    <div class="lbl">Palette</div>
+    <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;">
+      <div class="sw"><div class="chip" style="background:#0B0B0D;"></div><span class="nm">Base</span><span class="hex">#0B0B0D</span></div>
+      <div class="sw"><div class="chip" style="background:#151518;"></div><span class="nm">Surface</span><span class="hex">#151518</span></div>
+      <div class="sw"><div class="chip" style="background:#1E1E22;"></div><span class="nm">Surface 2</span><span class="hex">#1E1E22</span></div>
+      <div class="sw"><div class="chip" style="background:#2A2A30;"></div><span class="nm">Surface 3</span><span class="hex">#2A2A30</span></div>
+      <div class="sw"><div class="chip" style="background:#F5F5F7;"></div><span class="nm">Text primary</span><span class="hex">#F5F5F7</span></div>
+      <div class="sw"><div class="chip" style="background:#A1A1AA;"></div><span class="nm">Text secondary</span><span class="hex">#A1A1AA</span></div>
+      <div class="sw"><div class="chip" style="background:#71717A;"></div><span class="nm">Text tertiary</span><span class="hex">#71717A</span></div>
+      <div class="sw"><div class="chip" style="background:rgba(255,255,255,0.08);"></div><span class="nm">Hairline</span><span class="hex">#FFF / 8%</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="lbl">Accent &mdash; A vs B</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="#F5F5F7"><rect x="5" y="4" width="4.5" height="16" rx="1"/><rect x="14.5" y="4" width="4.5" height="16" rx="1"/></svg></div>
+          <div style="flex:1;height:3px;border-radius:999px;background:rgba(255,255,255,0.22);position:relative;"><div style="width:41%;height:100%;border-radius:999px;background:#4C8DFF;"></div><div style="position:absolute;left:calc(41% - 6px);top:-4.5px;width:12px;height:12px;border-radius:50%;background:#4C8DFF;"></div></div>
+        </div>
+        <div style="font-size:12px;color:#F5F5F7;font-weight:700;">Accent A &mdash; Cool blue &nbsp;<span class="hex">#4C8DFF</span></div>
+        <div style="font-size:12px;color:#A1A1AA;line-height:1.5;">Recedes behind film stills, reads as "system" not "brand". <span style="color:#4C8DFF;font-weight:700;">Recommended.</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="#F5F5F7"><rect x="5" y="4" width="4.5" height="16" rx="1"/><rect x="14.5" y="4" width="4.5" height="16" rx="1"/></svg></div>
+          <div style="flex:1;height:3px;border-radius:999px;background:rgba(255,255,255,0.22);position:relative;"><div style="width:41%;height:100%;border-radius:999px;background:#F5A524;"></div><div style="position:absolute;left:calc(41% - 6px);top:-4.5px;width:12px;height:12px;border-radius:50%;background:#F5A524;"></div></div>
+        </div>
+        <div style="font-size:12px;color:#F5F5F7;font-weight:700;">Accent B &mdash; Amber &nbsp;<span class="hex">#F5A524</span></div>
+        <div style="font-size:12px;color:#A1A1AA;line-height:1.5;">Warmer, more branded, higher energy &mdash; competes with poster art more.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="lbl">Type &mdash; Sora / Manrope</div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;align-items:baseline;gap:16px;"><span class="hex" style="width:120px;">Sora 28 / 700</span><span style="font-family:'Sora',sans-serif;font-size:28px;font-weight:700;">Night Drive</span></div>
+      <div style="display:flex;align-items:baseline;gap:16px;"><span class="hex" style="width:120px;">Sora 20 / 600</span><span style="font-family:'Sora',sans-serif;font-size:20px;font-weight:600;">Continue watching</span></div>
+      <div style="display:flex;align-items:baseline;gap:16px;"><span class="hex" style="width:120px;">Manrope 15 / 600</span><span style="font-size:15px;font-weight:600;">Chapter 3 &middot; Catalog &middot; 4K HDR</span></div>
+      <div style="display:flex;align-items:baseline;gap:16px;"><span class="hex" style="width:120px;">Manrope 13 / 400</span><span style="font-size:13px;color:#A1A1AA;">A courier drives the empty ring road through the small hours.</span></div>
+      <div style="display:flex;align-items:baseline;gap:16px;"><span class="hex" style="width:120px;">Manrope 11 / 700</span><span style="font-size:11px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;color:#71717A;">On this device</span></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+    <div class="card">
+      <div class="lbl">Controls</div>
+      <div class="spec"><span>Play button</span><span>64 dp / 44 hit</span></div>
+      <div class="spec"><span>Icon stroke</span><span>1.75, 20&ndash;24 grid</span></div>
+      <div class="spec"><span>Scrubber track</span><span>3 dp</span></div>
+      <div class="spec"><span>Scrubber knob</span><span>12 dp + 4 halo</span></div>
+      <div class="spec"><span>Chip radius</span><span>999</span></div>
+      <div class="spec"><span>Card radius</span><span>12&ndash;14 dp</span></div>
+      <div class="spec" style="border:none;"><span>Sheet radius</span><span>20&ndash;22 dp</span></div>
+    </div>
+    <div class="card">
+      <div class="lbl">Scrim &amp; motion</div>
+      <div style="height:64px;border-radius:10px;background:linear-gradient(180deg,rgba(0,0,0,0.78) 0%,rgba(0,0,0,0) 45%,rgba(0,0,0,0) 55%,rgba(0,0,0,0.78) 100%),radial-gradient(120% 130% at 65% 20%,#26313f,#12161d);margin-bottom:14px;"></div>
+      <div class="spec"><span>Overlay fade</span><span>150 ms ease-out</span></div>
+      <div class="spec"><span>Controls auto-hide</span><span>3 s idle</span></div>
+      <div class="spec"><span>Enter player</span><span>shared-element</span></div>
+      <div class="spec" style="border:none;"><span>Seek feedback</span><span>ripple + delta bubble</span></div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>
