@@ -2,6 +2,7 @@ package com.lumen.player.player
 
 import android.media.AudioManager
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
@@ -175,6 +176,8 @@ private fun hasOverride(player: Player, trackType: Int): Boolean =
 fun TrackSelectionSheet(
     player: Player,
     tracks: Tracks,
+    subtitleScaleLabel: String,
+    onCycleSubtitleScale: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -293,6 +296,22 @@ fun TrackSelectionSheet(
                         .verticalScroll(rememberScrollState())
                         .padding(vertical = 8.dp),
                 ) {
+                    if (trackType == C.TRACK_TYPE_TEXT) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(onClick = onCycleSubtitleScale)
+                                .padding(horizontal = 24.dp, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(text = "Text size", modifier = Modifier.weight(1f), fontSize = 14.sp)
+                            Text(
+                                text = subtitleScaleLabel,
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
                     if (rows.isEmpty()) {
                         Text(
                             text = "No $tabLabel tracks in this video.",

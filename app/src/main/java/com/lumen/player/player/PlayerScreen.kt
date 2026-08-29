@@ -157,6 +157,14 @@ private fun SourcePicker(
 private const val HUD_HIDE_MS = 700L
 private const val FORMAT_BADGE_MS = 4_500L
 
+/** Subtitle text size as a fraction of the video-surface height. */
+private val SUBTITLE_SCALES: List<Pair<String, Float>> = listOf(
+    "Small" to 0.040f,
+    "Medium" to 0.0533f,
+    "Large" to 0.070f,
+    "Extra large" to 0.090f,
+)
+
 @Composable
 private fun PlayerContainer(
     uri: String,
@@ -200,6 +208,8 @@ private fun PlayerContainer(
     }
 
     var showTracks by remember { mutableStateOf(false) }
+    var subtitleScaleIndex by rememberSaveable { mutableIntStateOf(1) }
+    val (subtitleScaleLabel, subtitleScaleFraction) = SUBTITLE_SCALES[subtitleScaleIndex]
 
     // Side-swipe brightness (left half) and volume (right half).
     var brightness by remember {
@@ -262,6 +272,7 @@ private fun PlayerContainer(
 
         SubtitleOverlay(
             player = player,
+            textSizeFraction = subtitleScaleFraction,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(bottom = if (controlsVisible) 88.dp else 20.dp),
@@ -294,6 +305,10 @@ private fun PlayerContainer(
             TrackSelectionSheet(
                 player = player,
                 tracks = tracks,
+                subtitleScaleLabel = subtitleScaleLabel,
+                onCycleSubtitleScale = {
+                    subtitleScaleIndex = (subtitleScaleIndex + 1) % SUBTITLE_SCALES.size
+                },
                 onDismiss = { showTracks = false },
                 modifier = Modifier.fillMaxSize(),
             )

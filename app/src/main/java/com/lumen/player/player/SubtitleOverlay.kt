@@ -1,5 +1,6 @@
 package com.lumen.player.player
 
+import android.graphics.Color
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -10,25 +11,42 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.Player
 import androidx.media3.common.text.CueGroup
+import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.SubtitleView
+
+/** White text, no background box, black outline for contrast against bright video. */
+private val TransparentCaptionStyle = CaptionStyleCompat(
+    /* foregroundColor = */ Color.WHITE,
+    /* backgroundColor = */ Color.TRANSPARENT,
+    /* windowColor = */ Color.TRANSPARENT,
+    /* edgeType = */ CaptionStyleCompat.EDGE_TYPE_OUTLINE,
+    /* edgeColor = */ Color.BLACK,
+    /* typeface = */ null,
+)
 
 /**
  * Draws the player's current text-track cues. [PlayerSurface] renders video only, so subtitles need
- * their own view. Cues are pushed from a [Player.Listener]; styling follows the device caption
- * settings.
+ * their own view. [textSizeFraction] is the cue height as a fraction of the view height.
  */
 @Composable
-fun SubtitleOverlay(player: Player, modifier: Modifier = Modifier) {
+fun SubtitleOverlay(
+    player: Player,
+    textSizeFraction: Float,
+    modifier: Modifier = Modifier,
+) {
     var view by remember { mutableStateOf<SubtitleView?>(null) }
 
     AndroidView(
         modifier = modifier,
         factory = { context ->
             SubtitleView(context).apply {
-                setUserDefaultStyle()
-                setUserDefaultTextSize()
+                // Ignore stream-embedded colours/sizes so the black caption box never comes back.
+                setApplyEmbeddedStyles(false)
+                setApplyEmbeddedFontSizes(false)
+                setStyle(TransparentCaptionStyle)
             }.also { view = it }
         },
+        update = { it.setFractionalTextSize(textSizeFraction) },
     )
 
     DisposableEffect(player, view) {
