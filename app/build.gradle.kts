@@ -50,6 +50,22 @@ android {
         compose = true
         buildConfig = true
     }
+
+    lint {
+        abortOnError = true
+        checkReleaseBuilds = false
+        disable += setOf(
+            // media3 @UnstableApi is opted into via the Kotlin compiler flag; Lint can't see that.
+            "UnsafeOptInUsageError",
+            // Dependency freshness is Dependabot's job, not a build gate.
+            "GradleDependency", "NewerVersionAvailable", "AndroidGradlePluginVersion",
+            "OldTargetApi",
+            // The video "Open with" filters intentionally use several data tags.
+            "IntentFilterUniqueDataAttributes",
+            // allowBackup=true default is fine for this app.
+            "DataExtractionRules",
+        )
+    }
 }
 
 kotlin {

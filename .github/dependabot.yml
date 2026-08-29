@@ -1,0 +1,30 @@
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 8
+    commit-message:
+      prefix: deps
+    groups:
+      media3:
+        patterns:
+          - "androidx.media3:*"
+      androidx:
+        patterns:
+          - "androidx.*"
+        exclude-patterns:
+          - "androidx.media3:*"
+      kotlin-compose:
+        patterns:
+          - "org.jetbrains.kotlin*"
+          - "androidx.compose*"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
