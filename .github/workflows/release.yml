@@ -1,15 +1,22 @@
 name: Release
 
-# Manual only: run from the Actions tab (or `gh workflow run Release -f version=0.6.0`).
-# Tags main's current HEAD, builds a signed APK (version is derived from the tag),
-# and publishes a GitHub release with notes from the commits since the last tag.
+# Manual only: run from the Actions tab (or `gh workflow run Release`).
+# Leave "version" blank to auto-bump the last tag (patch by default); or give an
+# exact version. Tags main's HEAD, builds a signed APK (version derived from the
+# tag) and publishes a GitHub release with notes since the previous tag.
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version to release, e.g. 0.6.0 (no leading v)"
-        required: true
+        description: "Exact version, e.g. 1.0.0 (leave blank to bump the last tag)"
+        required: false
         type: string
+      bump:
+        description: "Which part to bump when version is blank"
+        required: false
+        default: patch
+        type: choice
+        options: [patch, minor, major]
 
 permissions:
   contents: write
@@ -22,11 +29,6 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - name: Validate version
-        run: |
-          echo "${{ inputs.version }}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' \
-            || { echo "version must look like X.Y.Z"; exit 1; }
-
       - uses: actions/checkout@v7
         with:
           ref: main
@@ -35,25 +37,42 @@ jobs:
       - name: Fetch tags
         run: git fetch --tags --force
 
+      - name: Resolve version
+        id: ver
+        run: |
+          IN='${{ inputs.version }}'
+          PREV="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+          if [ -n "$IN" ]; then
+            V="${IN#v}"
+          elif [ -z "$PREV" ]; then
+            V="0.1.0"
+          else
+            IFS=. read -r MA MI PA <<<"${PREV#v}"
+            case "${{ inputs.bump }}" in
+              major) MA=$((MA+1)); MI=0; PA=0 ;;
+              minor) MI=$((MI+1)); PA=0 ;;
+              *)     PA=$((PA+1)) ;;
+            esac
+            V="${MA}.${MI}.${PA}"
+          fi
+          echo "$V" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' \
+            || { echo "::error::bad version '$V'"; exit 1; }
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "prev=$PREV"  >> "$GITHUB_OUTPUT"
+          echo "Releasing v$V (previous: ${PREV:-none})"
+
       - name: Guard against an existing tag
         run: |
-          if git rev-parse "v${{ inputs.version }}" >/dev/null 2>&1; then
-            echo "tag v${{ inputs.version }} already exists"; exit 1
-          fi
+          git rev-parse "v${{ steps.ver.outputs.version }}" >/dev/null 2>&1 \
+            && { echo "::error::tag v${{ steps.ver.outputs.version }} already exists"; exit 1; } || true
 
       - name: Require new commits since the last tag
         run: |
-          PREV="$(git describe --tags --abbrev=0 2>/dev/null || true)"
-          if [ -z "$PREV" ]; then
-            echo "No previous tag — first release, proceeding."
-            exit 0
-          fi
+          PREV='${{ steps.ver.outputs.prev }}'
+          [ -z "$PREV" ] && { echo "first release, proceeding"; exit 0; }
           N="$(git rev-list "${PREV}..HEAD" --count)"
           echo "$N commit(s) on main since ${PREV}"
-          if [ "$N" -eq 0 ]; then
-            echo "::error::main has no new commits since ${PREV}; nothing to release."
-            exit 1
-          fi
+          [ "$N" -gt 0 ] || { echo "::error::main has no new commits since ${PREV}; nothing to release."; exit 1; }
 
       - name: Require signing secret
         run: |
@@ -80,8 +99,8 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "v${{ inputs.version }}" -m "Lumen ${{ inputs.version }}"
-          git push origin "v${{ inputs.version }}"
+          git tag -a "v${{ steps.ver.outputs.version }}" -m "Lumen ${{ steps.ver.outputs.version }}"
+          git push origin "v${{ steps.ver.outputs.version }}"
 
       - name: Build signed APK
         env:
@@ -91,15 +110,15 @@ jobs:
         run: ./gradlew :app:assembleDebug --stacktrace
 
       - name: Stage APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk "lumen_player_v${{ inputs.version }}.apk"
+        run: cp app/build/outputs/apk/debug/app-debug.apk "lumen_player_v${{ steps.ver.outputs.version }}.apk"
 
       - name: Release notes
         run: |
-          PREV="$(git describe --tags --abbrev=0 "v${{ inputs.version }}^" 2>/dev/null || true)"
+          PREV='${{ steps.ver.outputs.prev }}'
           {
             if [ -n "$PREV" ]; then
               echo "Changes since ${PREV}:"; echo
-              git log "${PREV}..v${{ inputs.version }}" --no-merges --pretty='- %s' \
+              git log "${PREV}..HEAD" --no-merges --pretty='- %s' \
                 | grep -vE '^- (Bump version|chore: bump)' || true
             else
               echo "Initial release."
@@ -109,7 +128,7 @@ jobs:
 
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: "v${{ inputs.version }}"
-          name: "Lumen ${{ inputs.version }}"
+          tag_name: "v${{ steps.ver.outputs.version }}"
+          name: "Lumen ${{ steps.ver.outputs.version }}"
           body_path: NOTES.md
-          files: "lumen_player_v${{ inputs.version }}.apk"
+          files: "lumen_player_v${{ steps.ver.outputs.version }}.apk"
