@@ -155,6 +155,7 @@ private fun SourcePicker(
 }
 
 private const val HUD_HIDE_MS = 700L
+private const val FORMAT_BADGE_MS = 4_500L
 
 @Composable
 private fun PlayerContainer(
@@ -215,6 +216,15 @@ private fun PlayerContainer(
         }
     }
 
+    // Format badge: shown briefly whenever a new source starts.
+    val formatSummary = rememberFormatSummary(player)
+    var formatBadgeVisible by remember(uri) { mutableStateOf(true) }
+    LaunchedEffect(uri) {
+        formatBadgeVisible = true
+        delay(FORMAT_BADGE_MS)
+        formatBadgeVisible = false
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -270,6 +280,15 @@ private fun PlayerContainer(
         }
 
         hud?.let { GestureHudOverlay(it, modifier = Modifier.fillMaxSize()) }
+
+        FormatBadge(
+            summary = formatSummary,
+            visible = formatBadgeVisible && !controlsVisible,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .safeDrawingPadding()
+                .padding(16.dp),
+        )
 
         if (showTracks) {
             TrackSelectionSheet(
