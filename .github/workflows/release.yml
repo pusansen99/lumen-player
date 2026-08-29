@@ -88,10 +88,10 @@ jobs:
           SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
-        run: ./gradlew :app:assembleDebug --stacktrace
+        run: ./gradlew :app:assembleRelease --stacktrace
 
       - name: Stage APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk "lumen_player_v${{ inputs.version }}.apk"
+        run: cp app/build/outputs/apk/release/app-release.apk "lumen_player_v${{ inputs.version }}.apk"
 
       - name: Release notes
         run: |
