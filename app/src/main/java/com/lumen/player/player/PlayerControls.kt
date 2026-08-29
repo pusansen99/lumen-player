@@ -19,7 +19,6 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay10
 import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -50,7 +49,7 @@ private val Scrim = Color(0x99000000)
 
 /** Observes [Player.getPlaybackState] as Compose state. */
 @Composable
-private fun rememberPlaybackState(player: Player): Int {
+internal fun rememberPlaybackState(player: Player): Int {
     var state by remember(player) { mutableIntStateOf(player.playbackState) }
     LaunchedEffect(player) {
         player.listen { events ->
@@ -64,7 +63,7 @@ private fun rememberPlaybackState(player: Player): Int {
 
 /**
  * Minimal control overlay: back, scrubber + timestamps, and a transport row (−10s / play-pause /
- * +10s). A buffering spinner replaces the transport row while the player is buffering.
+ * +10s). Buffering is shown by a separate surface-level spinner in the player container.
  */
 @Composable
 fun PlayerControls(
@@ -119,27 +118,23 @@ fun PlayerControls(
             }
         }
 
-        if (playbackState == Player.STATE_BUFFERING) {
-            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center).size(48.dp))
-        } else {
-            Row(
-                modifier = Modifier.align(Alignment.Center),
-                horizontalArrangement = Arrangement.spacedBy(32.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconButton(onClick = seekBack::onClick, enabled = seekBack.isEnabled) {
-                    Icon(Icons.Filled.Replay10, contentDescription = "Seek back 10 seconds", modifier = Modifier.size(36.dp))
-                }
-                IconButton(onClick = playPause::onClick, enabled = playPause.isEnabled) {
-                    Icon(
-                        imageVector = if (playPause.showPlay) Icons.Filled.PlayArrow else Icons.Filled.Pause,
-                        contentDescription = if (playPause.showPlay) "Play" else "Pause",
-                        modifier = Modifier.size(56.dp),
-                    )
-                }
-                IconButton(onClick = seekForward::onClick, enabled = seekForward.isEnabled) {
-                    Icon(Icons.Filled.Forward10, contentDescription = "Seek forward 10 seconds", modifier = Modifier.size(36.dp))
-                }
+        Row(
+            modifier = Modifier.align(Alignment.Center),
+            horizontalArrangement = Arrangement.spacedBy(32.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = seekBack::onClick, enabled = seekBack.isEnabled) {
+                Icon(Icons.Filled.Replay10, contentDescription = "Seek back 10 seconds", modifier = Modifier.size(36.dp))
+            }
+            IconButton(onClick = playPause::onClick, enabled = playPause.isEnabled) {
+                Icon(
+                    imageVector = if (playPause.showPlay) Icons.Filled.PlayArrow else Icons.Filled.Pause,
+                    contentDescription = if (playPause.showPlay) "Play" else "Pause",
+                    modifier = Modifier.size(56.dp),
+                )
+            }
+            IconButton(onClick = seekForward::onClick, enabled = seekForward.isEnabled) {
+                Icon(Icons.Filled.Forward10, contentDescription = "Seek forward 10 seconds", modifier = Modifier.size(36.dp))
             }
         }
 

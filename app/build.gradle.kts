@@ -71,4 +71,5 @@ dependencies {
     implementation(libs.media3.common)
 
     implementation(libs.okhttp)
+    implementation(libs.androidx.datastore.preferences)
 }

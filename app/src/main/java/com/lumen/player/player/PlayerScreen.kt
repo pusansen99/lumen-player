@@ -4,9 +4,11 @@ import android.app.Activity
 import android.content.pm.ActivityInfo
 import android.media.AudioManager
 import android.view.WindowManager
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -17,18 +19,28 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FastForward
+import androidx.compose.material.icons.filled.FastRewind
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -46,6 +58,7 @@ import androidx.core.net.toUri
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
 import androidx.media3.ui.compose.PlayerSurface
 import androidx.media3.ui.compose.SURFACE_TYPE_SURFACE_VIEW
 import androidx.media3.ui.compose.modifiers.resizeWithContentScale
@@ -53,8 +66,15 @@ import androidx.media3.ui.compose.state.rememberPresentationState
 import com.lumen.player.update.UpdateDialog
 import com.lumen.player.update.rememberUpdateController
 import kotlinx.coroutines.delay
+import kotlin.math.abs
 
 private const val AUTO_HIDE_MS = 3_000L
+private const val HUD_HIDE_MS = 700L
+private const val SEEK_HUD_MS = 600L
+private const val FORMAT_BADGE_MS = 4_500L
+private const val RESUME_MIN_MS = 3_000L
+private const val POSITION_SAVE_INTERVAL_MS = 5_000L
+private const val SCRUB_FULL_WIDTH_MS = 120_000f
 
 /** Cycled by the resize button: how the video fills the screen. */
 private val RESIZE_MODES: List<Pair<String, ContentScale>> = listOf(
@@ -63,12 +83,24 @@ private val RESIZE_MODES: List<Pair<String, ContentScale>> = listOf(
     "Stretch" to ContentScale.FillBounds,
 )
 
+/** Subtitle text size as a fraction of the video-surface height. */
+private val SUBTITLE_SCALES: List<Pair<String, Float>> = listOf(
+    "Small" to 0.040f,
+    "Medium" to 0.0533f,
+    "Large" to 0.070f,
+    "Extra large" to 0.090f,
+)
+
 @Composable
 fun PlayerScreen(
     modifier: Modifier = Modifier,
     externalUri: String? = null,
     onExternalUriConsumed: () -> Unit = {},
 ) {
+    val context = LocalContext.current
+    val prefs = remember { PlayerPrefs.get(context) }
+    val lastUrl by prefs.lastUrl.collectAsState("")
+
     var sourceUri by rememberSaveable { mutableStateOf<String?>(null) }
     var sourceLabel by rememberSaveable { mutableStateOf("") }
 
@@ -79,6 +111,7 @@ fun PlayerScreen(
     // A video handed in from another app ("Open with" / share) plays immediately.
     LaunchedEffect(externalUri) {
         if (externalUri != null) {
+            if (externalUri.startsWith("http", ignoreCase = true)) prefs.setLastUrl(externalUri)
             sourceUri = externalUri
             sourceLabel = externalUri.toUri().lastPathSegment ?: "Now playing"
             onExternalUriConsumed()
@@ -89,7 +122,9 @@ fun PlayerScreen(
         val uri = sourceUri
         if (uri == null) {
             SourcePicker(
+                initialUrl = lastUrl,
                 onPlay = { value, label ->
+                    if (value.startsWith("http", ignoreCase = true)) prefs.setLastUrl(value)
                     sourceUri = value
                     sourceLabel = label
                 },
@@ -99,6 +134,7 @@ fun PlayerScreen(
             PlayerContainer(
                 uri = uri,
                 title = sourceLabel.ifBlank { "Now playing" },
+                prefs = prefs,
                 onBack = { sourceUri = null },
             )
         }
@@ -107,10 +143,14 @@ fun PlayerScreen(
 
 @Composable
 private fun SourcePicker(
+    initialUrl: String,
     onPlay: (uri: String, label: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var url by rememberSaveable { mutableStateOf("") }
+    LaunchedEffect(initialUrl) {
+        if (url.isEmpty() && initialUrl.isNotEmpty()) url = initialUrl
+    }
 
     val openDocument = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument(),
@@ -154,34 +194,44 @@ private fun SourcePicker(
     }
 }
 
-private const val HUD_HIDE_MS = 700L
-private const val FORMAT_BADGE_MS = 4_500L
-
-/** Subtitle text size as a fraction of the video-surface height. */
-private val SUBTITLE_SCALES: List<Pair<String, Float>> = listOf(
-    "Small" to 0.040f,
-    "Medium" to 0.0533f,
-    "Large" to 0.070f,
-    "Extra large" to 0.090f,
-)
-
 @Composable
 private fun PlayerContainer(
     uri: String,
     title: String,
+    prefs: PlayerPrefs,
     onBack: () -> Unit,
 ) {
     val player = rememberManagedExoPlayer()
     val presentationState = rememberPresentationState(player)
     val tracks = rememberTracks(player)
+    val playbackState = rememberPlaybackState(player)
+    val error = rememberPlayerError(player)
 
     val context = LocalContext.current
     val activity = context as? Activity
     val audioManager = remember { context.getSystemService(AudioManager::class.java) }
 
+    // Load, restoring the saved position for this URI.
+    var resumedFromMs by remember(uri) { mutableLongStateOf(0L) }
     LaunchedEffect(uri) {
+        val resume = prefs.getPosition(uri)
         player.setMediaItem(MediaItem.fromUri(uri))
         player.prepare()
+        if (resume > RESUME_MIN_MS) {
+            player.seekTo(resume)
+            resumedFromMs = resume
+        }
+    }
+
+    // Persist the position periodically and when leaving.
+    LaunchedEffect(uri) {
+        while (true) {
+            delay(POSITION_SAVE_INTERVAL_MS)
+            prefs.savePosition(uri, player.currentPosition, player.duration)
+        }
+    }
+    DisposableEffect(uri) {
+        onDispose { prefs.savePosition(uri, player.currentPosition, player.duration) }
     }
 
     PlayerWindowEffects()
@@ -208,6 +258,11 @@ private fun PlayerContainer(
     }
 
     var showTracks by remember { mutableStateOf(false) }
+
+    // System back: close the track sheet if open, otherwise return to the picker.
+    BackHandler(enabled = showTracks) { showTracks = false }
+    BackHandler(enabled = !showTracks) { onBack() }
+
     var subtitleScaleIndex by rememberSaveable { mutableIntStateOf(1) }
     val (subtitleScaleLabel, subtitleScaleFraction) = SUBTITLE_SCALES[subtitleScaleIndex]
 
@@ -226,6 +281,16 @@ private fun PlayerContainer(
         }
     }
 
+    // Double-tap seek feedback and horizontal-drag scrub preview.
+    var seekHud by remember { mutableStateOf<SeekHud?>(null) }
+    LaunchedEffect(seekHud) {
+        if (seekHud != null) {
+            delay(SEEK_HUD_MS)
+            seekHud = null
+        }
+    }
+    var scrubTargetMs by remember { mutableStateOf<Long?>(null) }
+
     // Format badge: shown briefly whenever a new source starts.
     val formatSummary = rememberFormatSummary(player)
     var formatBadgeVisible by remember(uri) { mutableStateOf(true) }
@@ -235,14 +300,47 @@ private fun PlayerContainer(
         formatBadgeVisible = false
     }
 
+    val showSpinner = error == null &&
+        (presentationState.coverSurface || playbackState == Player.STATE_BUFFERING) &&
+        scrubTargetMs == null
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
-            .pointerInput(Unit) {
-                detectTapGestures(onTap = { controlsVisible = !controlsVisible })
+            .pointerInput(uri) {
+                detectTapGestures(
+                    onTap = { controlsVisible = !controlsVisible },
+                    onDoubleTap = { offset ->
+                        val forward = offset.x > size.width / 2f
+                        if (forward) player.seekForward() else player.seekBack()
+                        seekHud = SeekHud(forward = forward, seconds = if (forward) 10 else -10)
+                    },
+                )
             }
-            .pointerInput(Unit) {
+            .pointerInput(uri) {
+                var startPositionMs = 0L
+                var accumulatedX = 0f
+                detectHorizontalDragGestures(
+                    onDragStart = {
+                        startPositionMs = player.currentPosition
+                        accumulatedX = 0f
+                    },
+                    onHorizontalDrag = { change, dragAmount ->
+                        change.consume()
+                        accumulatedX += dragAmount
+                        val duration = player.duration.coerceAtLeast(1L)
+                        val deltaMs = (accumulatedX / size.width * SCRUB_FULL_WIDTH_MS).toLong()
+                        scrubTargetMs = (startPositionMs + deltaMs).coerceIn(0L, duration)
+                    },
+                    onDragEnd = {
+                        scrubTargetMs?.let { player.seekTo(it) }
+                        scrubTargetMs = null
+                    },
+                    onDragCancel = { scrubTargetMs = null },
+                )
+            }
+            .pointerInput(uri) {
                 var onLeft = true
                 detectVerticalDragGestures(
                     onDragStart = { offset -> onLeft = offset.x < size.width / 2f },
@@ -278,7 +376,11 @@ private fun PlayerContainer(
                 .padding(bottom = if (controlsVisible) 88.dp else 20.dp),
         )
 
-        if (controlsVisible) {
+        if (showSpinner) {
+            CircularProgressIndicator(modifier = Modifier.size(48.dp))
+        }
+
+        if (controlsVisible && error == null) {
             PlayerControls(
                 player = player,
                 title = title,
@@ -291,15 +393,47 @@ private fun PlayerContainer(
         }
 
         hud?.let { GestureHudOverlay(it, modifier = Modifier.fillMaxSize()) }
+        seekHud?.let { SeekFeedback(it, modifier = Modifier.fillMaxSize()) }
+        scrubTargetMs?.let {
+            ScrubPreview(
+                targetMs = it,
+                durationMs = player.duration.coerceAtLeast(0L),
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+
+        if (resumedFromMs > 0L) {
+            ResumeChip(
+                positionMs = resumedFromMs,
+                onRestart = {
+                    player.seekTo(0L)
+                    resumedFromMs = 0L
+                },
+                onDismiss = { resumedFromMs = 0L },
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .safeDrawingPadding()
+                    .padding(top = 12.dp),
+            )
+        }
 
         FormatBadge(
             summary = formatSummary,
-            visible = formatBadgeVisible && !controlsVisible,
+            visible = formatBadgeVisible && !controlsVisible && error == null,
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .safeDrawingPadding()
                 .padding(16.dp),
         )
+
+        error?.let {
+            ErrorOverlay(
+                error = it,
+                onRetry = { player.prepare() },
+                onBack = onBack,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
 
         if (showTracks) {
             TrackSelectionSheet(
@@ -313,6 +447,78 @@ private fun PlayerContainer(
                 modifier = Modifier.fillMaxSize(),
             )
         }
+    }
+}
+
+private data class SeekHud(val forward: Boolean, val seconds: Int)
+
+@Composable
+private fun SeekFeedback(hud: SeekHud, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier,
+        contentAlignment = if (hud.forward) Alignment.CenterEnd else Alignment.CenterStart,
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 56.dp)
+                .background(Color(0xB3000000), CircleShape)
+                .padding(horizontal = 18.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = if (hud.forward) Icons.Filled.FastForward else Icons.Filled.FastRewind,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(20.dp),
+            )
+            Text(
+                text = "${abs(hud.seconds)}s",
+                color = Color.White,
+                fontSize = 13.sp,
+                modifier = Modifier.padding(start = 6.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ScrubPreview(targetMs: Long, durationMs: Long, modifier: Modifier = Modifier) {
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        Column(
+            modifier = Modifier
+                .background(Color(0xCC000000), RoundedCornerShape(10.dp))
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(text = formatTime(targetMs), color = Color.White, fontSize = 16.sp)
+            Text(text = formatTime(durationMs), color = Color(0xFFA1A1AA), fontSize = 12.sp)
+        }
+    }
+}
+
+@Composable
+private fun ResumeChip(
+    positionMs: Long,
+    onRestart: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    LaunchedEffect(Unit) {
+        delay(5_000)
+        onDismiss()
+    }
+    Row(
+        modifier = modifier
+            .background(Color(0xCC000000), RoundedCornerShape(999.dp))
+            .padding(start = 14.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "Resumed from ${formatTime(positionMs)}",
+            color = Color.White,
+            fontSize = 12.sp,
+        )
+        androidx.compose.material3.TextButton(onClick = onRestart) { Text("Restart", fontSize = 12.sp) }
     }
 }
 
