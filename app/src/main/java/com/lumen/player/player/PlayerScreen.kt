@@ -69,6 +69,7 @@ import androidx.media3.ui.compose.PlayerSurface
 import androidx.media3.ui.compose.SURFACE_TYPE_SURFACE_VIEW
 import androidx.media3.ui.compose.modifiers.resizeWithContentScale
 import androidx.media3.ui.compose.state.rememberPresentationState
+import androidx.media3.ui.compose.state.rememberProgressStateWithTickInterval
 import com.lumen.player.update.UpdateDialog
 import com.lumen.player.update.rememberUpdateController
 import kotlinx.coroutines.delay
@@ -220,6 +221,13 @@ private fun PlayerContainer(
     val playbackState = rememberPlaybackState(player)
     val error = rememberPlayerError(player)
     val thumbnailState = rememberThumbnailState(uri)
+    val skipSegments = rememberSkipSegments(uri)
+    val skipProgress = rememberProgressStateWithTickInterval(player, tickIntervalMs = 1000L)
+    val activeSkip = activeSkipSegment(
+        skipProgress.currentPositionMs,
+        skipProgress.durationMs,
+        skipSegments,
+    )
 
     val context = LocalContext.current
     val activity = context as? Activity
@@ -479,6 +487,20 @@ private fun PlayerContainer(
                     .align(Alignment.TopCenter)
                     .safeDrawingPadding()
                     .padding(top = 12.dp),
+            )
+        }
+
+        activeSkip?.takeIf { error == null }?.let { seg ->
+            SkipButton(
+                segment = seg,
+                onSkip = {
+                    player.seekTo(seg.endMs ?: player.duration.coerceAtLeast(0L))
+                    interactionTick++
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .safeDrawingPadding()
+                    .padding(end = 24.dp, bottom = if (controlsVisible) 104.dp else 32.dp),
             )
         }
 
