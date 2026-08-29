@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  checks: write        # mikepenz/action-junit-report posts a check run
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -15,6 +16,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -32,11 +34,29 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
-      - name: Assemble + lint
-        run: ./gradlew assembleDebug lintDebug --stacktrace
+      - name: Assemble + test + lint
+        run: ./gradlew assembleDebug testDebugUnitTest lintDebug --stacktrace
 
       - name: Report version
         run: echo "versionName from git = $(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo 0.0.0)"
+
+      - name: Publish unit test results
+        if: always()
+        uses: mikepenz/action-junit-report@v5
+        with:
+          report_paths: 'app/build/test-results/testDebugUnitTest/**/*.xml'
+          check_name: unit tests
+          fail_on_failure: true
+
+      - name: Upload test + lint reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: reports
+          path: |
+            app/build/reports/tests/testDebugUnitTest
+            app/build/reports/lint-results-debug.html
+          if-no-files-found: ignore
 
       - name: Upload debug APK
         if: always()
@@ -45,11 +65,3 @@ jobs:
           name: app-debug
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: warn
-
-      - name: Upload lint report
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: lint-report
-          path: app/build/reports/lint-results-debug.html
-          if-no-files-found: ignore

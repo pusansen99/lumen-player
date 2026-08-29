@@ -69,6 +69,10 @@ android {
         buildConfig = true
     }
 
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
+
     lint {
         abortOnError = true
         checkReleaseBuilds = false
@@ -118,4 +122,7 @@ dependencies {
 
     implementation(libs.okhttp)
     implementation(libs.androidx.datastore.preferences)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.org.json) // real org.json for unit tests (android.jar ships stubs)
 }

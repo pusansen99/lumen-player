@@ -75,7 +75,7 @@ class SkipSegmentsStore {
         ).filter { it.startsWith("http") }.distinct()
     }
 
-    private fun parse(json: String): List<SkipSegment> {
+    internal fun parse(json: String): List<SkipSegment> {
         val arr = JSONObject(json).optJSONArray("segments") ?: return emptyList()
         val out = ArrayList<SkipSegment>(arr.length())
         for (i in 0 until arr.length()) {
