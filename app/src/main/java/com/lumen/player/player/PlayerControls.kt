@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Forward10
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay10
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -71,6 +72,7 @@ fun PlayerControls(
     title: String,
     resizeLabel: String,
     onCycleResize: () -> Unit,
+    onOpenTracks: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -100,6 +102,9 @@ fun PlayerControls(
                 maxLines = 1,
                 modifier = Modifier.weight(1f).padding(start = 4.dp),
             )
+            IconButton(onClick = onOpenTracks) {
+                Icon(Icons.Filled.Tune, contentDescription = "Audio, subtitle and video tracks")
+            }
             TextButton(onClick = onCycleResize) {
                 Icon(
                     Icons.Filled.AspectRatio,

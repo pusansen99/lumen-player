@@ -1,11 +1,13 @@
 package com.lumen.player.player
 
 import android.app.Activity
+import android.media.AudioManager
 import android.view.WindowManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
@@ -129,6 +133,8 @@ private fun SourcePicker(
     }
 }
 
+private const val HUD_HIDE_MS = 700L
+
 @Composable
 private fun PlayerContainer(
     uri: String,
@@ -137,6 +143,11 @@ private fun PlayerContainer(
 ) {
     val player = rememberManagedExoPlayer()
     val presentationState = rememberPresentationState(player)
+    val tracks = rememberTracks(player)
+
+    val context = LocalContext.current
+    val activity = context as? Activity
+    val audioManager = remember { context.getSystemService(AudioManager::class.java) }
 
     LaunchedEffect(uri) {
         player.setMediaItem(MediaItem.fromUri(uri))
@@ -156,11 +167,50 @@ private fun PlayerContainer(
         }
     }
 
+    var showTracks by remember { mutableStateOf(false) }
+
+    // Side-swipe brightness (left half) and volume (right half).
+    var brightness by remember {
+        mutableFloatStateOf(
+            activity?.window?.attributes?.screenBrightness?.takeIf { it in 0f..1f } ?: 0.5f
+        )
+    }
+    var volume by remember { mutableFloatStateOf(audioManager?.musicVolumeFraction() ?: 0.5f) }
+    var hud by remember { mutableStateOf<GestureHud?>(null) }
+    LaunchedEffect(hud) {
+        if (hud != null) {
+            delay(HUD_HIDE_MS)
+            hud = null
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
-            .clickable { controlsVisible = !controlsVisible },
+            .pointerInput(Unit) {
+                detectTapGestures(onTap = { controlsVisible = !controlsVisible })
+            }
+            .pointerInput(Unit) {
+                var onLeft = true
+                detectVerticalDragGestures(
+                    onDragStart = { offset -> onLeft = offset.x < size.width / 2f },
+                    onVerticalDrag = { change, dragAmount ->
+                        change.consume()
+                        val step = -dragAmount / size.height // drag up => positive
+                        if (onLeft) {
+                            brightness = (brightness + step).coerceIn(0.01f, 1f)
+                            activity?.window?.let { w ->
+                                w.attributes = w.attributes.apply { screenBrightness = brightness }
+                            }
+                            hud = GestureHud.Brightness(brightness)
+                        } else {
+                            volume = audioManager?.setMusicVolumeFraction(volume + step) ?: volume
+                            hud = GestureHud.Volume(volume)
+                        }
+                    },
+                )
+            },
         contentAlignment = Alignment.Center,
     ) {
         PlayerSurface(
@@ -175,7 +225,19 @@ private fun PlayerContainer(
                 title = title,
                 resizeLabel = resizeLabel,
                 onCycleResize = { resizeIndex = (resizeIndex + 1) % RESIZE_MODES.size },
+                onOpenTracks = { showTracks = true },
                 onBack = onBack,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+
+        hud?.let { GestureHudOverlay(it, modifier = Modifier.fillMaxSize()) }
+
+        if (showTracks) {
+            TrackSelectionSheet(
+                player = player,
+                tracks = tracks,
+                onDismiss = { showTracks = false },
                 modifier = Modifier.fillMaxSize(),
             )
         }
