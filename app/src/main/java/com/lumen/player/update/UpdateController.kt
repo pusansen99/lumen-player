@@ -40,6 +40,8 @@ class UpdateController(
     fun checkOnce() {
         if (checkStarted) return
         checkStarted = true
+        // Remove any APK left over from a previous update.
+        ApkInstaller.deleteDownloaded(appContext)
         scope.launch {
             val info = runCatching { repository.fetchLatest() }.getOrNull() ?: return@launch
             currentInfo = info

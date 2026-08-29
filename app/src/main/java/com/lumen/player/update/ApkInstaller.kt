@@ -88,6 +88,15 @@ object ApkInstaller {
         }
     }
 
+    /** Deletes a previously downloaded update APK (call on app start, after an install). */
+    fun deleteDownloaded(context: Context) {
+        runCatching {
+            File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), FILE_NAME)
+                .takeIf { it.exists() }
+                ?.delete()
+        }
+    }
+
     /** Launches the system package installer for a downloaded APK. */
     fun install(context: Context, apk: File) {
         val uri: Uri = FileProvider.getUriForFile(
