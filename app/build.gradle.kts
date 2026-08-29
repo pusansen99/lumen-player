@@ -12,8 +12,8 @@ android {
         applicationId = "com.lumen.player"
         minSdk = 36
         targetSdk = 36
-        versionCode = 2
-        versionName = "0.2.0"
+        versionCode = 3
+        versionName = "0.3.0"
 
         // GitHub repo the in-app updater queries for the latest release.
         buildConfigField("String", "UPDATE_REPO", "\"pusansen99/lumen-player\"")
