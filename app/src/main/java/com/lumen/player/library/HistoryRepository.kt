@@ -74,7 +74,8 @@ class HistoryRepository private constructor(
                 ),
             )
         }
-        return resumePositionForEntry(dao.find(uri))
+        // The upsert above never touches positionMs/finished, so the pre-write row is authoritative.
+        return resumePositionForEntry(existing)
     }
 
     /** Fire-and-forget. Applies the finished rule. Never throws into playback. */
@@ -85,22 +86,21 @@ class HistoryRepository private constructor(
                 val uri = normalizeMediaUri(rawUri)
                 val existing = dao.find(uri) ?: return@launch
                 val effectiveDuration = if (durationMs > 0L) durationMs else existing.durationMs
-                dao.upsert(
-                    existing.copy(
-                        positionMs = positionMs,
-                        durationMs = effectiveDuration,
-                        finished = isFinished(positionMs, effectiveDuration),
-                        lastPlayedAt = System.currentTimeMillis(),
-                    ),
+                // Targeted UPDATE: a concurrent updateThumbnail() can't be clobbered by a stale copy.
+                dao.updateProgress(
+                    uri = uri,
+                    positionMs = positionMs,
+                    durationMs = effectiveDuration,
+                    finished = isFinished(positionMs, effectiveDuration),
+                    lastPlayedAt = System.currentTimeMillis(),
                 )
             }.onFailure { Log.w(TAG, "updatePosition failed", it) }
         }
     }
 
     suspend fun updateThumbnail(rawUri: String, path: String) {
-        val uri = normalizeMediaUri(rawUri)
-        val existing = dao.find(uri) ?: return
-        dao.upsert(existing.copy(thumbnailPath = path))
+        // Targeted UPDATE: no read-modify-write, so a concurrent updatePosition() can't clobber it.
+        dao.updateThumbnailPath(normalizeMediaUri(rawUri), path)
     }
 
     /** Drops the row and, with it, the persistable read grant and the cached poster JPEG. */
