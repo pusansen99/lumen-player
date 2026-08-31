@@ -6,35 +6,25 @@ import android.media.AudioManager
 import android.view.HapticFeedbackConstants
 import android.view.WindowManager
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.FastRewind
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -48,6 +38,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -56,13 +47,15 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.ui.compose.PlayerSurface
@@ -70,11 +63,21 @@ import androidx.media3.ui.compose.SURFACE_TYPE_SURFACE_VIEW
 import androidx.media3.ui.compose.modifiers.resizeWithContentScale
 import androidx.media3.ui.compose.state.rememberPresentationState
 import androidx.media3.ui.compose.state.rememberProgressStateWithTickInterval
+import com.lumen.player.library.HistoryRepository
+import com.lumen.player.library.captureFrame
+import com.lumen.player.library.data.SourceType
+import com.lumen.player.library.ui.HistoryScreen
+import com.lumen.player.library.ui.LibraryScreen
+import com.lumen.player.library.ui.SettingsScreen
 import com.lumen.player.update.UpdateDialog
 import com.lumen.player.update.rememberUpdateController
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlin.math.abs
 import kotlin.math.roundToInt
+
+/** Which home destination shows while no video is playing. */
+enum class HomeRoute { Library, History, Settings }
 
 private const val AUTO_HIDE_MS = 3_000L
 private const val HUD_HIDE_MS = 700L
@@ -109,6 +112,8 @@ private val SUBTITLE_SCALES: List<Pair<String, Float>> = listOf(
 fun PlayerScreen(
     modifier: Modifier = Modifier,
     externalUri: String? = null,
+    externalSourceType: SourceType? = null,
+    externalHasPersistedPermission: Boolean = true,
     onExternalUriConsumed: () -> Unit = {},
 ) {
     val context = LocalContext.current
@@ -117,9 +122,13 @@ fun PlayerScreen(
 
     var sourceUri by rememberSaveable { mutableStateOf<String?>(null) }
     var sourceLabel by rememberSaveable { mutableStateOf("") }
+    var sourceTypeName by rememberSaveable { mutableStateOf(SourceType.URL.name) }
+    var hasPersistedPermission by rememberSaveable { mutableStateOf(true) }
+    var homeRoute by rememberSaveable { mutableStateOf(HomeRoute.Library) }
 
     val updateController = rememberUpdateController()
     LaunchedEffect(Unit) { updateController.checkOnce() }
+    LaunchedEffect(Unit) { prefs.migrateLegacyResumeData() }
     UpdateDialog(updateController)
 
     // A video handed in from another app ("Open with" / share) plays immediately.
@@ -128,6 +137,10 @@ fun PlayerScreen(
             if (externalUri.startsWith("http", ignoreCase = true)) prefs.setLastUrl(externalUri)
             sourceUri = externalUri
             sourceLabel = externalUri.toUri().lastPathSegment ?: "Now playing"
+            sourceTypeName = (externalSourceType ?: SourceType.EXTERNAL_VIEW).name
+            // MainActivity already knows whether the grant was taken; trust it rather than
+            // re-deriving with a main-thread binder call into the content resolver.
+            hasPersistedPermission = externalHasPersistedPermission
             onExternalUriConsumed()
         }
     }
@@ -135,75 +148,45 @@ fun PlayerScreen(
     Box(modifier = modifier.fillMaxSize().background(Color.Black)) {
         val uri = sourceUri
         if (uri == null) {
-            SourcePicker(
-                initialUrl = lastUrl,
-                onPlay = { value, label ->
-                    if (value.startsWith("http", ignoreCase = true)) prefs.setLastUrl(value)
-                    sourceUri = value
-                    sourceLabel = label
-                },
-                modifier = Modifier.safeDrawingPadding().padding(24.dp),
-            )
+            BackHandler(enabled = homeRoute != HomeRoute.Library) { homeRoute = HomeRoute.Library }
+            when (homeRoute) {
+                HomeRoute.Library -> LibraryScreen(
+                    lastUrl = lastUrl,
+                    onPlay = { value, label, type, hasPerm ->
+                        if (value.startsWith("http", ignoreCase = true)) prefs.setLastUrl(value)
+                        sourceUri = value
+                        sourceLabel = label
+                        sourceTypeName = type.name
+                        hasPersistedPermission = hasPerm
+                    },
+                    onOpenHistory = { homeRoute = HomeRoute.History },
+                    onOpenSettings = { homeRoute = HomeRoute.Settings },
+                    modifier = Modifier.safeDrawingPadding(),
+                )
+                HomeRoute.History -> HistoryScreen(
+                    onPlay = { value, label, type, hasPerm ->
+                        if (value.startsWith("http", ignoreCase = true)) prefs.setLastUrl(value)
+                        sourceUri = value
+                        sourceLabel = label
+                        sourceTypeName = type.name
+                        hasPersistedPermission = hasPerm
+                    },
+                    onBack = { homeRoute = HomeRoute.Library },
+                    modifier = Modifier.safeDrawingPadding(),
+                )
+                HomeRoute.Settings -> SettingsScreen(
+                    onBack = { homeRoute = HomeRoute.Library },
+                    modifier = Modifier.safeDrawingPadding(),
+                )
+            }
         } else {
             PlayerContainer(
                 uri = uri,
                 title = sourceLabel.ifBlank { "Now playing" },
-                prefs = prefs,
+                sourceType = runCatching { SourceType.valueOf(sourceTypeName) }.getOrDefault(SourceType.URL),
+                hasPersistedPermission = hasPersistedPermission,
                 onBack = { sourceUri = null },
             )
-        }
-    }
-}
-
-@Composable
-private fun SourcePicker(
-    initialUrl: String,
-    onPlay: (uri: String, label: String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    var url by rememberSaveable { mutableStateOf("") }
-    LaunchedEffect(initialUrl) {
-        if (url.isEmpty() && initialUrl.isNotEmpty()) url = initialUrl
-    }
-
-    val openDocument = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocument(),
-    ) { picked ->
-        if (picked != null) {
-            onPlay(picked.toString(), picked.lastPathSegment ?: "Local file")
-        }
-    }
-
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Text("Lumen", color = Color.White, fontSize = 28.sp)
-        Text(
-            "Paste a stream URL (HLS / DASH / SmoothStreaming / MP4) or open a video file.",
-            color = Color(0xFFA1A1AA),
-            fontSize = 13.sp,
-        )
-
-        OutlinedTextField(
-            value = url,
-            onValueChange = { url = it },
-            singleLine = true,
-            label = { Text("Video URL") },
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
-            keyboardActions = KeyboardActions(onGo = { if (url.isNotBlank()) onPlay(url.trim(), url.trim()) }),
-            modifier = Modifier.fillMaxWidth(),
-        )
-
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Button(
-                onClick = { if (url.isNotBlank()) onPlay(url.trim(), url.trim()) },
-                enabled = url.isNotBlank(),
-            ) { Text("Play URL") }
-
-            OutlinedButton(
-                onClick = { openDocument.launch(arrayOf("video/*")) },
-            ) { Text("Open file") }
         }
     }
 }
@@ -212,7 +195,8 @@ private fun SourcePicker(
 private fun PlayerContainer(
     uri: String,
     title: String,
-    prefs: PlayerPrefs,
+    sourceType: SourceType,
+    hasPersistedPermission: Boolean,
     onBack: () -> Unit,
 ) {
     val player = rememberManagedExoPlayer()
@@ -233,11 +217,18 @@ private fun PlayerContainer(
     val activity = context as? Activity
     val view = LocalView.current
     val audioManager = remember { context.getSystemService(AudioManager::class.java) }
+    val history = remember { HistoryRepository.get(context) }
+    val lifecycleOwner = LocalLifecycleOwner.current
 
-    // Load, restoring the saved position for this URI.
+    // Load, restoring the saved position for this URI from the library history.
     var resumedFromMs by remember(uri) { mutableLongStateOf(0L) }
     LaunchedEffect(uri) {
-        val resume = prefs.getPosition(uri)
+        val resume = history.startSession(
+            rawUri = uri,
+            sourceType = sourceType,
+            titleHint = title,
+            hasPersistedPermission = hasPersistedPermission,
+        )
         player.setMediaItem(MediaItem.fromUri(uri))
         player.prepare()
         if (resume > RESUME_MIN_MS) {
@@ -246,15 +237,39 @@ private fun PlayerContainer(
         }
     }
 
-    // Persist the position periodically and when leaving.
+    // Persist the position periodically while playing (a paused loop would just rewrite the same row).
     LaunchedEffect(uri) {
         while (true) {
             delay(POSITION_SAVE_INTERVAL_MS)
-            prefs.savePosition(uri, player.currentPosition, player.duration)
+            if (player.isPlaying) {
+                history.updatePosition(uri, player.currentPosition, player.duration)
+            }
         }
     }
-    DisposableEffect(uri) {
-        onDispose { prefs.savePosition(uri, player.currentPosition, player.duration) }
+
+    // Persist on pause/stop (covers "swipe the app away") and on leaving the screen.
+    DisposableEffect(uri, lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_PAUSE || event == Lifecycle.Event.ON_STOP) {
+                history.updatePosition(uri, player.currentPosition, player.duration)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            history.updatePosition(uri, player.currentPosition, player.duration)
+        }
+    }
+
+    // Capture a poster frame once the media is ready (best-effort; silent for network streams).
+    // Keyed on uri only: a later STATE_READY -> BUFFERING (a seek or a stall) must not cancel this.
+    LaunchedEffect(uri) {
+        if (uri.startsWith("http", ignoreCase = true)) return@LaunchedEffect
+        snapshotFlow { playbackState }.first { it == Player.STATE_READY }
+        // Always an early frame (duration / 5), so a resumed-near-end video doesn't grab a spoiler.
+        val at = player.duration.coerceAtLeast(0L) / 5
+        val path = captureFrame(context, uri, at)
+        if (path != null) history.updateThumbnail(uri, path)
     }
 
     PlayerWindowEffects()

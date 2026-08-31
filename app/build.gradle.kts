@@ -2,6 +2,8 @@ plugins {
     // AGP 9 has built-in Kotlin support, so no kotlin-android plugin is applied.
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.androidx.room)
 }
 
 /** Version comes from git: name = nearest tag (v0.4.0 -> 0.4.0), code = commit count. */
@@ -107,6 +109,10 @@ android {
             "DataExtractionRules",
         )
     }
+
+    room {
+        schemaDirectory("$projectDir/schemas")
+    }
 }
 
 kotlin {
@@ -141,6 +147,9 @@ dependencies {
 
     implementation(libs.okhttp)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 
     testImplementation(libs.junit)
     testImplementation(libs.org.json) // real org.json for unit tests (android.jar ships stubs)

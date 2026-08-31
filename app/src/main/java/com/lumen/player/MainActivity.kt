@@ -12,24 +12,34 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.core.content.IntentCompat
+import com.lumen.player.library.data.SourceType
 import com.lumen.player.player.PlayerScreen
 import com.lumen.player.ui.theme.LumenTheme
 
 class MainActivity : ComponentActivity() {
 
-    /** A video handed to us via ACTION_VIEW / ACTION_SEND, if any. Observed by Compose. */
-    private var externalUri by mutableStateOf<Uri?>(null)
+    private data class IncomingVideo(
+        val uri: Uri,
+        val sourceType: SourceType,
+        /** Whether a persistable read grant was actually taken (always true for non-content URIs). */
+        val hasPersistedPermission: Boolean,
+    )
+
+    private var incoming by mutableStateOf<IncomingVideo?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        externalUri = extractVideoUri(intent)
+        incoming = extractVideo(intent)
         setContent {
             LumenTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     PlayerScreen(
-                        externalUri = externalUri?.toString(),
-                        onExternalUriConsumed = { externalUri = null },
+                        externalUri = incoming?.uri?.toString(),
+                        externalSourceType = incoming?.sourceType,
+                        externalHasPersistedPermission = incoming?.hasPersistedPermission ?: true,
+                        onExternalUriConsumed = { incoming = null },
                     )
                 }
             }
@@ -39,12 +49,29 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        extractVideoUri(intent)?.let { externalUri = it }
+        extractVideo(intent)?.let { incoming = it }
     }
 
-    private fun extractVideoUri(intent: Intent?): Uri? = when (intent?.action) {
-        Intent.ACTION_VIEW -> intent.data
-        Intent.ACTION_SEND -> intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
-        else -> null
+    private fun extractVideo(intent: Intent?): IncomingVideo? {
+        val (uri, type) = when (intent?.action) {
+            Intent.ACTION_VIEW ->
+                intent.data to SourceType.EXTERNAL_VIEW
+            Intent.ACTION_SEND ->
+                IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java) to
+                    SourceType.EXTERNAL_SEND
+            else -> null to SourceType.EXTERNAL_VIEW
+        }
+        if (uri == null) return null
+        val hasPersistedPermission = if (uri.scheme == "content") {
+            runCatching {
+                contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                )
+            }.isSuccess
+        } else {
+            true
+        }
+        return IncomingVideo(uri, type, hasPersistedPermission)
     }
 }
