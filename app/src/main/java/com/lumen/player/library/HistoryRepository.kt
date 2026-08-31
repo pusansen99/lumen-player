@@ -98,6 +98,7 @@ class HistoryRepository private constructor(private val dao: HistoryDao) {
     }
 
     suspend fun forget(rawUri: String) = dao.delete(normalizeMediaUri(rawUri))
+    suspend fun clearAll() = dao.clear()
     suspend fun setFinished(rawUri: String, finished: Boolean) =
         dao.setFinished(normalizeMediaUri(rawUri), finished)
     suspend fun restart(rawUri: String) = dao.restart(normalizeMediaUri(rawUri))
