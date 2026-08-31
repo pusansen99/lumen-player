@@ -138,7 +138,12 @@ fun PlayerScreen(
             sourceUri = externalUri
             sourceLabel = externalUri.toUri().lastPathSegment ?: "Now playing"
             sourceTypeName = (externalSourceType ?: SourceType.EXTERNAL_VIEW).name
-            hasPersistedPermission = externalSourceType == null // URLs: true; content:// set by caller in Task 9
+            hasPersistedPermission = when {
+                externalUri.startsWith("http", ignoreCase = true) -> true
+                else -> context.contentResolver.persistedUriPermissions.any {
+                    it.uri.toString() == externalUri && it.isReadPermission
+                }
+            }
             onExternalUriConsumed()
         }
     }
