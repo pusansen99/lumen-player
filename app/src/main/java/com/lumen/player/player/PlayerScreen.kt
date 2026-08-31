@@ -6,35 +6,25 @@ import android.media.AudioManager
 import android.view.HapticFeedbackConstants
 import android.view.WindowManager
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.FastRewind
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -56,7 +46,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -76,11 +65,17 @@ import androidx.media3.ui.compose.state.rememberProgressStateWithTickInterval
 import com.lumen.player.library.HistoryRepository
 import com.lumen.player.library.captureFrame
 import com.lumen.player.library.data.SourceType
+import com.lumen.player.library.ui.HistoryScreen
+import com.lumen.player.library.ui.LibraryScreen
+import com.lumen.player.library.ui.SettingsScreen
 import com.lumen.player.update.UpdateDialog
 import com.lumen.player.update.rememberUpdateController
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 import kotlin.math.roundToInt
+
+/** Which home destination shows while no video is playing. */
+enum class HomeRoute { Library, History, Settings }
 
 private const val AUTO_HIDE_MS = 3_000L
 private const val HUD_HIDE_MS = 700L
@@ -126,6 +121,7 @@ fun PlayerScreen(
     var sourceLabel by rememberSaveable { mutableStateOf("") }
     var sourceTypeName by rememberSaveable { mutableStateOf(SourceType.URL.name) }
     var hasPersistedPermission by rememberSaveable { mutableStateOf(true) }
+    var homeRoute by rememberSaveable { mutableStateOf(HomeRoute.Library) }
 
     val updateController = rememberUpdateController()
     LaunchedEffect(Unit) { updateController.checkOnce() }
@@ -151,21 +147,36 @@ fun PlayerScreen(
     Box(modifier = modifier.fillMaxSize().background(Color.Black)) {
         val uri = sourceUri
         if (uri == null) {
-            SourcePicker(
-                initialUrl = lastUrl,
-                onPlay = { value, label ->
-                    if (value.startsWith("http", ignoreCase = true)) prefs.setLastUrl(value)
-                    sourceUri = value
-                    sourceLabel = label
-                    sourceTypeName = if (value.startsWith("http", true)) {
-                        SourceType.URL.name
-                    } else {
-                        SourceType.SAF_FILE.name
-                    }
-                    hasPersistedPermission = true
-                },
-                modifier = Modifier.safeDrawingPadding().padding(24.dp),
-            )
+            BackHandler(enabled = homeRoute != HomeRoute.Library) { homeRoute = HomeRoute.Library }
+            when (homeRoute) {
+                HomeRoute.Library -> LibraryScreen(
+                    lastUrl = lastUrl,
+                    onPlay = { value, label, type, hasPerm ->
+                        if (value.startsWith("http", ignoreCase = true)) prefs.setLastUrl(value)
+                        sourceUri = value
+                        sourceLabel = label
+                        sourceTypeName = type.name
+                        hasPersistedPermission = hasPerm
+                    },
+                    onOpenHistory = { homeRoute = HomeRoute.History },
+                    onOpenSettings = { homeRoute = HomeRoute.Settings },
+                    modifier = Modifier.safeDrawingPadding(),
+                )
+                HomeRoute.History -> HistoryScreen(
+                    onPlay = { value, label, type, hasPerm ->
+                        sourceUri = value
+                        sourceLabel = label
+                        sourceTypeName = type.name
+                        hasPersistedPermission = hasPerm
+                    },
+                    onBack = { homeRoute = HomeRoute.Library },
+                    modifier = Modifier.safeDrawingPadding(),
+                )
+                HomeRoute.Settings -> SettingsScreen(
+                    onBack = { homeRoute = HomeRoute.Library },
+                    modifier = Modifier.safeDrawingPadding(),
+                )
+            }
         } else {
             PlayerContainer(
                 uri = uri,
@@ -174,66 +185,6 @@ fun PlayerScreen(
                 hasPersistedPermission = hasPersistedPermission,
                 onBack = { sourceUri = null },
             )
-        }
-    }
-}
-
-@Composable
-private fun SourcePicker(
-    initialUrl: String,
-    onPlay: (uri: String, label: String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    var url by rememberSaveable { mutableStateOf("") }
-    LaunchedEffect(initialUrl) {
-        if (url.isEmpty() && initialUrl.isNotEmpty()) url = initialUrl
-    }
-
-    val context = LocalContext.current
-    val openDocument = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocument(),
-    ) { picked ->
-        if (picked != null) {
-            runCatching {
-                context.contentResolver.takePersistableUriPermission(
-                    picked,
-                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION,
-                )
-            }
-            onPlay(picked.toString(), picked.lastPathSegment ?: "Local file")
-        }
-    }
-
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Text("Lumen", color = Color.White, fontSize = 28.sp)
-        Text(
-            "Paste a stream URL (HLS / DASH / SmoothStreaming / MP4) or open a video file.",
-            color = Color(0xFFA1A1AA),
-            fontSize = 13.sp,
-        )
-
-        OutlinedTextField(
-            value = url,
-            onValueChange = { url = it },
-            singleLine = true,
-            label = { Text("Video URL") },
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
-            keyboardActions = KeyboardActions(onGo = { if (url.isNotBlank()) onPlay(url.trim(), url.trim()) }),
-            modifier = Modifier.fillMaxWidth(),
-        )
-
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Button(
-                onClick = { if (url.isNotBlank()) onPlay(url.trim(), url.trim()) },
-                enabled = url.isNotBlank(),
-            ) { Text("Play URL") }
-
-            OutlinedButton(
-                onClick = { openDocument.launch(arrayOf("video/*")) },
-            ) { Text("Open file") }
         }
     }
 }
