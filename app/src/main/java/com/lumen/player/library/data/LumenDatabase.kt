@@ -6,13 +6,14 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [PlaybackHistoryEntry::class],
-    version = 1,
+    entities = [PlaybackHistoryEntry::class, LibraryFolder::class, LibraryVideo::class],
+    version = 2,
     exportSchema = true,
 )
 abstract class LumenDatabase : RoomDatabase() {
 
     abstract fun history(): HistoryDao
+    abstract fun library(): LibraryDao
 
     companion object {
         @Volatile
@@ -24,7 +25,7 @@ abstract class LumenDatabase : RoomDatabase() {
                     context.applicationContext,
                     LumenDatabase::class.java,
                     "lumen.db",
-                ).build().also { instance = it }
+                ).addMigrations(MIGRATION_1_2).build().also { instance = it }
             }
     }
 }
