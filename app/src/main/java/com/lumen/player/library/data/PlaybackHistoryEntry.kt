@@ -34,7 +34,10 @@ data class PlaybackHistoryEntry(
 fun isFinished(positionMs: Long, durationMs: Long): Boolean =
     durationMs > 0 && positionMs > durationMs - NEAR_EDGE_MS
 
-/** Continue Watching shows unfinished rows the user is more than [NEAR_EDGE_MS] into. */
+/**
+ * Continue Watching shows unfinished rows the user is more than [NEAR_EDGE_MS] into.
+ * [HistoryDao.observeContinueWatching] is the SQL mirror of this predicate.
+ */
 fun qualifiesForContinueWatching(entry: PlaybackHistoryEntry): Boolean =
     !entry.finished && entry.positionMs > NEAR_EDGE_MS
 

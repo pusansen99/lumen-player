@@ -14,13 +14,14 @@ interface HistoryDao {
     @Query("SELECT * FROM playback_history WHERE uri = :uri")
     suspend fun find(uri: String): PlaybackHistoryEntry?
 
-    // Mirror of qualifiesForContinueWatching(): finished = 0 AND positionMs > 5000.
+    // SQL mirror of qualifiesForContinueWatching(); callers pass NEAR_EDGE_MS so the
+    // threshold isn't duplicated as a literal here.
     @Query(
         "SELECT * FROM playback_history " +
-            "WHERE finished = 0 AND positionMs > 5000 " +
+            "WHERE finished = 0 AND positionMs > :minPositionMs " +
             "ORDER BY lastPlayedAt DESC LIMIT 30",
     )
-    fun observeContinueWatching(): Flow<List<PlaybackHistoryEntry>>
+    fun observeContinueWatching(minPositionMs: Long = NEAR_EDGE_MS): Flow<List<PlaybackHistoryEntry>>
 
     @Query("SELECT * FROM playback_history ORDER BY lastPlayedAt DESC LIMIT :limit")
     fun observeRecent(limit: Int): Flow<List<PlaybackHistoryEntry>>

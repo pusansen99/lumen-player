@@ -51,9 +51,8 @@ class PlayerPrefs private constructor(private val appContext: Context) {
         val alreadyDone = appContext.dataStore.data.first()[LEGACY_MIGRATED] ?: false
         if (alreadyDone) return
         appContext.dataStore.edit { prefs ->
-            prefs.asMap().keys
-                .filter { it.name.startsWith(LEGACY_POSITION_PREFIX) }
-                .forEach { prefs.remove(it) }
+            val stale = legacyResumeKeyNames(prefs.asMap().keys.mapTo(mutableSetOf()) { it.name })
+            prefs.asMap().keys.filter { it.name in stale }.forEach { prefs.remove(it) }
             prefs[LEGACY_MIGRATED] = true
         }
     }
