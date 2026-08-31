@@ -78,11 +78,12 @@ class HistoryRepository private constructor(private val dao: HistoryDao) {
             runCatching {
                 val uri = normalizeMediaUri(rawUri)
                 val existing = dao.find(uri) ?: return@launch
+                val effectiveDuration = if (durationMs > 0L) durationMs else existing.durationMs
                 dao.upsert(
                     existing.copy(
                         positionMs = positionMs,
-                        durationMs = if (durationMs > 0L) durationMs else existing.durationMs,
-                        finished = isFinished(positionMs, durationMs),
+                        durationMs = effectiveDuration,
+                        finished = isFinished(positionMs, effectiveDuration),
                         lastPlayedAt = System.currentTimeMillis(),
                     ),
                 )
