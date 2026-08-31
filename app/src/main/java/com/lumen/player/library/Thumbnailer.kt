@@ -3,7 +3,6 @@ package com.lumen.player.library
 import android.content.Context
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
-import android.net.Uri
 import android.util.Log
 import androidx.core.net.toUri
 import com.lumen.player.library.data.normalizeMediaUri
@@ -21,8 +20,9 @@ private const val JPEG_QUALITY = 80
 
 /** Stable, path-safe file name for the cached frame of [rawUri]. */
 fun thumbFileName(rawUri: String): String {
-    val hash = normalizeMediaUri(rawUri).hashCode().toLong() and 0xFFFFFFFFL
-    return "thumb_$hash.jpg"
+    val digest = java.security.MessageDigest.getInstance("SHA-256")
+        .digest(normalizeMediaUri(rawUri).toByteArray())
+    return "thumb_" + digest.joinToString("") { "%02x".format(it) }.take(32) + ".jpg"
 }
 
 /**
@@ -38,12 +38,8 @@ suspend fun captureFrame(context: Context, rawUri: String, atMs: Long): String? 
 
         val retriever = MediaMetadataRetriever()
         try {
-            val uri = rawUri.toUri()
-            if (uri.scheme == "http" || uri.scheme == "https") {
-                retriever.setDataSource(rawUri, HashMap<String, String>())
-            } else {
-                retriever.setDataSource(context, uri as Uri)
-            }
+            // Only ever called for local content; the sole caller guards out http(s) URIs.
+            retriever.setDataSource(context, rawUri.toUri())
             val atUs = (atMs.coerceAtLeast(0L)) * 1000L
             val frame = retriever.getScaledFrameAtTime(
                 atUs,

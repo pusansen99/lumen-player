@@ -19,7 +19,12 @@ import com.lumen.player.ui.theme.LumenTheme
 
 class MainActivity : ComponentActivity() {
 
-    private data class IncomingVideo(val uri: Uri, val sourceType: SourceType)
+    private data class IncomingVideo(
+        val uri: Uri,
+        val sourceType: SourceType,
+        /** Whether a persistable read grant was actually taken (always true for non-content URIs). */
+        val hasPersistedPermission: Boolean,
+    )
 
     private var incoming by mutableStateOf<IncomingVideo?>(null)
 
@@ -33,6 +38,7 @@ class MainActivity : ComponentActivity() {
                     PlayerScreen(
                         externalUri = incoming?.uri?.toString(),
                         externalSourceType = incoming?.sourceType,
+                        externalHasPersistedPermission = incoming?.hasPersistedPermission ?: true,
                         onExternalUriConsumed = { incoming = null },
                     )
                 }
@@ -56,14 +62,16 @@ class MainActivity : ComponentActivity() {
             else -> null to SourceType.EXTERNAL_VIEW
         }
         if (uri == null) return null
-        if (uri.scheme == "content") {
+        val hasPersistedPermission = if (uri.scheme == "content") {
             runCatching {
                 contentResolver.takePersistableUriPermission(
                     uri,
                     Intent.FLAG_GRANT_READ_URI_PERMISSION,
                 )
-            }
+            }.isSuccess
+        } else {
+            true
         }
-        return IncomingVideo(uri, type)
+        return IncomingVideo(uri, type, hasPersistedPermission)
     }
 }

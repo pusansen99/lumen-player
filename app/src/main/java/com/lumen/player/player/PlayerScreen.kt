@@ -38,6 +38,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -71,6 +72,7 @@ import com.lumen.player.library.ui.SettingsScreen
 import com.lumen.player.update.UpdateDialog
 import com.lumen.player.update.rememberUpdateController
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -111,6 +113,7 @@ fun PlayerScreen(
     modifier: Modifier = Modifier,
     externalUri: String? = null,
     externalSourceType: SourceType? = null,
+    externalHasPersistedPermission: Boolean = true,
     onExternalUriConsumed: () -> Unit = {},
 ) {
     val context = LocalContext.current
@@ -135,12 +138,9 @@ fun PlayerScreen(
             sourceUri = externalUri
             sourceLabel = externalUri.toUri().lastPathSegment ?: "Now playing"
             sourceTypeName = (externalSourceType ?: SourceType.EXTERNAL_VIEW).name
-            hasPersistedPermission = when {
-                externalUri.startsWith("http", ignoreCase = true) -> true
-                else -> context.contentResolver.persistedUriPermissions.any {
-                    it.uri.toString() == externalUri && it.isReadPermission
-                }
-            }
+            // MainActivity already knows whether the grant was taken; trust it rather than
+            // re-deriving with a main-thread binder call into the content resolver.
+            hasPersistedPermission = externalHasPersistedPermission
             onExternalUriConsumed()
         }
     }
@@ -165,6 +165,7 @@ fun PlayerScreen(
                 )
                 HomeRoute.History -> HistoryScreen(
                     onPlay = { value, label, type, hasPerm ->
+                        if (value.startsWith("http", ignoreCase = true)) prefs.setLastUrl(value)
                         sourceUri = value
                         sourceLabel = label
                         sourceTypeName = type.name
@@ -236,11 +237,13 @@ private fun PlayerContainer(
         }
     }
 
-    // Persist the position periodically while playing.
+    // Persist the position periodically while playing (a paused loop would just rewrite the same row).
     LaunchedEffect(uri) {
         while (true) {
             delay(POSITION_SAVE_INTERVAL_MS)
-            history.updatePosition(uri, player.currentPosition, player.duration)
+            if (player.isPlaying) {
+                history.updatePosition(uri, player.currentPosition, player.duration)
+            }
         }
     }
 
@@ -259,14 +262,14 @@ private fun PlayerContainer(
     }
 
     // Capture a poster frame once the media is ready (best-effort; silent for network streams).
-    var thumbCaptured by remember(uri) { mutableStateOf(false) }
-    LaunchedEffect(uri, playbackState) {
-        if (!thumbCaptured && playbackState == Player.STATE_READY && !uri.startsWith("http", true)) {
-            thumbCaptured = true
-            val at = player.currentPosition.coerceAtLeast(player.duration.coerceAtLeast(0L) / 5)
-            val path = captureFrame(context, uri, at)
-            if (path != null) history.updateThumbnail(uri, path)
-        }
+    // Keyed on uri only: a later STATE_READY -> BUFFERING (a seek or a stall) must not cancel this.
+    LaunchedEffect(uri) {
+        if (uri.startsWith("http", ignoreCase = true)) return@LaunchedEffect
+        snapshotFlow { playbackState }.first { it == Player.STATE_READY }
+        // Always an early frame (duration / 5), so a resumed-near-end video doesn't grab a spoiler.
+        val at = player.duration.coerceAtLeast(0L) / 5
+        val path = captureFrame(context, uri, at)
+        if (path != null) history.updateThumbnail(uri, path)
     }
 
     PlayerWindowEffects()

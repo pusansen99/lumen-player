@@ -70,7 +70,9 @@ class HistoryRepository private constructor(
                     } else {
                         existing.title
                     },
-                    hasPersistedPermission = hasPersistedPermission || existing.hasPersistedPermission,
+                    // Overwrite with the caller's current grant state; a grant can be revoked, so
+                    // OR-ing with the stored value would make this flag permanently sticky-true.
+                    hasPersistedPermission = hasPersistedPermission,
                 ),
             )
         }
@@ -129,6 +131,7 @@ class HistoryRepository private constructor(
             )
         }
     }
+
     suspend fun setFinished(rawUri: String, finished: Boolean) =
         dao.setFinished(normalizeMediaUri(rawUri), finished)
     suspend fun restart(rawUri: String) = dao.restart(normalizeMediaUri(rawUri))
