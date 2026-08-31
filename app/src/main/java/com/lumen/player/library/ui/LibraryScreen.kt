@@ -27,11 +27,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,13 +42,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.net.toUri
 import com.lumen.player.library.HistoryRepository
 import com.lumen.player.library.data.SourceType
-import com.lumen.player.library.data.qualifiesForContinueWatching
 import kotlinx.coroutines.launch
 
-private val Background = Color(0xFF0B0B0D)
 private val TextPrimary = Color(0xFFF4F4F5)
 private val TextSecondary = Color(0xFFA1A1AA)
 
@@ -62,14 +61,15 @@ fun LibraryScreen(
     val history = remember { HistoryRepository.get(context) }
     val scope = rememberCoroutineScope()
 
+    val recentFlow = remember { history.recent(24) }
     val continueWatching by history.continueWatching.collectAsState(emptyList())
-    val recent by history.recent(24).collectAsState(emptyList())
+    val recent by recentFlow.collectAsState(emptyList())
     // "Recent" = rows not already shown in Continue Watching.
     val continueUris = continueWatching.map { it.uri }.toSet()
     val recentOnly = recent.filter { it.uri !in continueUris }.take(10)
 
-    var url by remember { mutableStateOf("") }
-    if (url.isEmpty() && lastUrl.isNotEmpty()) url = lastUrl
+    var url by rememberSaveable { mutableStateOf("") }
+    LaunchedEffect(lastUrl) { if (url.isEmpty() && lastUrl.isNotEmpty()) url = lastUrl }
 
     var menuUri by remember { mutableStateOf<String?>(null) }
 
@@ -77,12 +77,12 @@ fun LibraryScreen(
         ActivityResultContracts.OpenDocument(),
     ) { picked ->
         if (picked != null) {
-            runCatching {
+            val granted = runCatching {
                 context.contentResolver.takePersistableUriPermission(
                     picked, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION,
                 )
-            }
-            onPlay(picked.toString(), picked.lastPathSegment ?: "Local file", SourceType.SAF_FILE, true)
+            }.isSuccess
+            onPlay(picked.toString(), picked.lastPathSegment ?: "Local file", SourceType.SAF_FILE, granted)
         }
     }
 
