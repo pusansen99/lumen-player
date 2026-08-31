@@ -5,7 +5,6 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.CoroutineScope
@@ -59,26 +58,10 @@ class PlayerPrefs private constructor(private val appContext: Context) {
         }
     }
 
-    // TODO(Task 8): delete this once PlayerScreen.kt calls HistoryRepository instead of PlayerPrefs for resume state.
-    @Deprecated("Temporary no-op bridge until Task 8 repoints PlayerScreen at HistoryRepository; delete then.")
-    fun savePosition(uri: String, positionMs: Long, durationMs: Long) {
-        // No-op: old per-video resume positions are no longer stored here
-    }
-
-    // TODO(Task 8): delete this once PlayerScreen.kt calls HistoryRepository instead of PlayerPrefs for resume state.
-    @Deprecated("Temporary no-op bridge until Task 8 repoints PlayerScreen at HistoryRepository; delete then.")
-    suspend fun getPosition(uri: String): Long = 0L
-
     companion object {
         private val LAST_URL = stringPreferencesKey("last_url")
         private val TMDB_API_KEY = stringPreferencesKey("tmdb_api_key")
         private val LEGACY_MIGRATED = booleanPreferencesKey("history_migrated_v1")
-
-        // TODO(Task 8): delete this once PlayerScreen.kt calls HistoryRepository instead of PlayerPrefs for resume state.
-        // Retained so a future migration could reference the old key shape.
-        @Suppress("unused")
-        private fun legacyPositionKey(uri: String) =
-            longPreferencesKey("$LEGACY_POSITION_PREFIX${uri.hashCode()}")
 
         @Volatile
         private var instance: PlayerPrefs? = null

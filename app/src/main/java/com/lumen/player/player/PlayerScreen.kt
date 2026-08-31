@@ -63,6 +63,9 @@ import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.ui.compose.PlayerSurface
@@ -70,6 +73,9 @@ import androidx.media3.ui.compose.SURFACE_TYPE_SURFACE_VIEW
 import androidx.media3.ui.compose.modifiers.resizeWithContentScale
 import androidx.media3.ui.compose.state.rememberPresentationState
 import androidx.media3.ui.compose.state.rememberProgressStateWithTickInterval
+import com.lumen.player.library.HistoryRepository
+import com.lumen.player.library.captureFrame
+import com.lumen.player.library.data.SourceType
 import com.lumen.player.update.UpdateDialog
 import com.lumen.player.update.rememberUpdateController
 import kotlinx.coroutines.delay
@@ -109,6 +115,7 @@ private val SUBTITLE_SCALES: List<Pair<String, Float>> = listOf(
 fun PlayerScreen(
     modifier: Modifier = Modifier,
     externalUri: String? = null,
+    externalSourceType: SourceType? = null,
     onExternalUriConsumed: () -> Unit = {},
 ) {
     val context = LocalContext.current
@@ -117,6 +124,8 @@ fun PlayerScreen(
 
     var sourceUri by rememberSaveable { mutableStateOf<String?>(null) }
     var sourceLabel by rememberSaveable { mutableStateOf("") }
+    var sourceTypeName by rememberSaveable { mutableStateOf(SourceType.URL.name) }
+    var hasPersistedPermission by rememberSaveable { mutableStateOf(true) }
 
     val updateController = rememberUpdateController()
     LaunchedEffect(Unit) { updateController.checkOnce() }
@@ -128,6 +137,8 @@ fun PlayerScreen(
             if (externalUri.startsWith("http", ignoreCase = true)) prefs.setLastUrl(externalUri)
             sourceUri = externalUri
             sourceLabel = externalUri.toUri().lastPathSegment ?: "Now playing"
+            sourceTypeName = (externalSourceType ?: SourceType.EXTERNAL_VIEW).name
+            hasPersistedPermission = externalSourceType == null // URLs: true; content:// set by caller in Task 9
             onExternalUriConsumed()
         }
     }
@@ -141,6 +152,12 @@ fun PlayerScreen(
                     if (value.startsWith("http", ignoreCase = true)) prefs.setLastUrl(value)
                     sourceUri = value
                     sourceLabel = label
+                    sourceTypeName = if (value.startsWith("http", true)) {
+                        SourceType.URL.name
+                    } else {
+                        SourceType.SAF_FILE.name
+                    }
+                    hasPersistedPermission = true
                 },
                 modifier = Modifier.safeDrawingPadding().padding(24.dp),
             )
@@ -148,7 +165,8 @@ fun PlayerScreen(
             PlayerContainer(
                 uri = uri,
                 title = sourceLabel.ifBlank { "Now playing" },
-                prefs = prefs,
+                sourceType = runCatching { SourceType.valueOf(sourceTypeName) }.getOrDefault(SourceType.URL),
+                hasPersistedPermission = hasPersistedPermission,
                 onBack = { sourceUri = null },
             )
         }
@@ -166,10 +184,17 @@ private fun SourcePicker(
         if (url.isEmpty() && initialUrl.isNotEmpty()) url = initialUrl
     }
 
+    val context = LocalContext.current
     val openDocument = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument(),
     ) { picked ->
         if (picked != null) {
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(
+                    picked,
+                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                )
+            }
             onPlay(picked.toString(), picked.lastPathSegment ?: "Local file")
         }
     }
@@ -212,7 +237,8 @@ private fun SourcePicker(
 private fun PlayerContainer(
     uri: String,
     title: String,
-    prefs: PlayerPrefs,
+    sourceType: SourceType,
+    hasPersistedPermission: Boolean,
     onBack: () -> Unit,
 ) {
     val player = rememberManagedExoPlayer()
@@ -233,11 +259,18 @@ private fun PlayerContainer(
     val activity = context as? Activity
     val view = LocalView.current
     val audioManager = remember { context.getSystemService(AudioManager::class.java) }
+    val history = remember { HistoryRepository.get(context) }
+    val lifecycleOwner = LocalLifecycleOwner.current
 
-    // Load, restoring the saved position for this URI.
+    // Load, restoring the saved position for this URI from the library history.
     var resumedFromMs by remember(uri) { mutableLongStateOf(0L) }
     LaunchedEffect(uri) {
-        val resume = prefs.getPosition(uri)
+        val resume = history.startSession(
+            rawUri = uri,
+            sourceType = sourceType,
+            titleHint = title,
+            hasPersistedPermission = hasPersistedPermission,
+        )
         player.setMediaItem(MediaItem.fromUri(uri))
         player.prepare()
         if (resume > RESUME_MIN_MS) {
@@ -246,15 +279,37 @@ private fun PlayerContainer(
         }
     }
 
-    // Persist the position periodically and when leaving.
+    // Persist the position periodically while playing.
     LaunchedEffect(uri) {
         while (true) {
             delay(POSITION_SAVE_INTERVAL_MS)
-            prefs.savePosition(uri, player.currentPosition, player.duration)
+            history.updatePosition(uri, player.currentPosition, player.duration)
         }
     }
-    DisposableEffect(uri) {
-        onDispose { prefs.savePosition(uri, player.currentPosition, player.duration) }
+
+    // Persist on pause/stop (covers "swipe the app away") and on leaving the screen.
+    DisposableEffect(uri, lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_PAUSE || event == Lifecycle.Event.ON_STOP) {
+                history.updatePosition(uri, player.currentPosition, player.duration)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            history.updatePosition(uri, player.currentPosition, player.duration)
+        }
+    }
+
+    // Capture a poster frame once the media is ready (best-effort; silent for network streams).
+    var thumbCaptured by remember(uri) { mutableStateOf(false) }
+    LaunchedEffect(uri, playbackState) {
+        if (!thumbCaptured && playbackState == Player.STATE_READY && !uri.startsWith("http", true)) {
+            thumbCaptured = true
+            val at = player.currentPosition.coerceAtLeast(player.duration.coerceAtLeast(0L) / 5)
+            val path = captureFrame(context, uri, at)
+            if (path != null) history.updateThumbnail(uri, path)
+        }
     }
 
     PlayerWindowEffects()
