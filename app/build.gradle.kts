@@ -114,6 +114,12 @@ android {
     room {
         schemaDirectory("$projectDir/schemas")
     }
+
+    // Room's MigrationTestHelper loads the exported schema JSONs from the merged
+    // assets folder. Robolectric unit tests read the debug variant's merged
+    // assets, and the Room Gradle plugin only wires schemas into androidTest, so
+    // add them to the debug asset set here (kept out of the release APK).
+    sourceSets.getByName("debug").assets.srcDir("$projectDir/schemas")
 }
 
 kotlin {
@@ -121,6 +127,16 @@ kotlin {
     compilerOptions {
         optIn.add("androidx.media3.common.util.UnstableApi")
     }
+}
+
+// Robolectric's SDK 36 sandbox requires a Java 21 runtime (the app's minSdk is 36,
+// so lower Robolectric SDKs can't parse the test manifest). Run unit tests on 21.
+tasks.withType<Test>().configureEach {
+    javaLauncher.set(
+        javaToolchains.launcherFor {
+            languageVersion.set(JavaLanguageVersion.of(21))
+        }
+    )
 }
 
 dependencies {
@@ -159,4 +175,7 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.org.json) // real org.json for unit tests (android.jar ships stubs)
     testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.room.testing)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.test.runner)
 }
