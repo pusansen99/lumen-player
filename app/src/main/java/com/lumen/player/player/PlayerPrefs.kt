@@ -3,6 +3,7 @@ package com.lumen.player.player
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -17,29 +18,22 @@ import kotlinx.coroutines.launch
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("player_prefs")
 
-private const val NEAR_EDGE_MS = 5_000L
+private const val LEGACY_POSITION_PREFIX = "pos_"
 
-/** Lightweight persistence: last-played URL and per-video resume positions. */
+/** Names of the obsolete hash-keyed resume entries in a set of DataStore key names. */
+fun legacyResumeKeyNames(allKeyNames: Set<String>): Set<String> =
+    allKeyNames.filterTo(mutableSetOf()) { it.startsWith(LEGACY_POSITION_PREFIX) }
+
+/**
+ * Lightweight preferences: last-played URL, TMDB API key, and a one-time migration flag.
+ *
+ * Per-video resume positions moved to Room ([com.lumen.player.library.HistoryRepository]) in the
+ * library feature. The old `pos_<hash>` entries here cannot be mapped back to their URIs, so they
+ * are cleared once on first launch of the new build rather than migrated.
+ */
 class PlayerPrefs private constructor(private val appContext: Context) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
-    private fun positionKey(uri: String) = longPreferencesKey("pos_${uri.hashCode()}")
-
-    /** Fire-and-forget. Clears the entry near the start/end so finished videos don't "resume". */
-    fun savePosition(uri: String, positionMs: Long, durationMs: Long) {
-        scope.launch {
-            appContext.dataStore.edit { prefs ->
-                val key = positionKey(uri)
-                val nearEnd = durationMs > 0 && positionMs > durationMs - NEAR_EDGE_MS
-                if (positionMs < NEAR_EDGE_MS || nearEnd) prefs.remove(key)
-                else prefs[key] = positionMs
-            }
-        }
-    }
-
-    suspend fun getPosition(uri: String): Long =
-        appContext.dataStore.data.first()[positionKey(uri)] ?: 0L
 
     fun setLastUrl(url: String) {
         scope.launch { appContext.dataStore.edit { it[LAST_URL] = url } }
@@ -47,8 +41,43 @@ class PlayerPrefs private constructor(private val appContext: Context) {
 
     val lastUrl: Flow<String> = appContext.dataStore.data.map { it[LAST_URL] ?: "" }
 
+    val tmdbApiKey: Flow<String> = appContext.dataStore.data.map { it[TMDB_API_KEY] ?: "" }
+
+    fun setTmdbApiKey(key: String) {
+        scope.launch { appContext.dataStore.edit { it[TMDB_API_KEY] = key.trim() } }
+    }
+
+    /** Clears the obsolete `pos_*` resume entries exactly once. Safe to call on every launch. */
+    suspend fun migrateLegacyResumeData() {
+        val alreadyDone = appContext.dataStore.data.first()[LEGACY_MIGRATED] ?: false
+        if (alreadyDone) return
+        appContext.dataStore.edit { prefs ->
+            prefs.asMap().keys
+                .filter { it.name.startsWith(LEGACY_POSITION_PREFIX) }
+                .forEach { prefs.remove(it) }
+            prefs[LEGACY_MIGRATED] = true
+        }
+    }
+
+    // Temporary stubs for PlayerScreen.kt until Task 8 updates the call sites.
+    // These are no-ops to allow the build to compile.
+    @Deprecated("Moved to Room; removed in favor of HistoryRepository")
+    fun savePosition(uri: String, positionMs: Long, durationMs: Long) {
+        // No-op: old per-video resume positions are no longer stored here
+    }
+
+    @Deprecated("Moved to Room; removed in favor of HistoryRepository")
+    suspend fun getPosition(uri: String): Long = 0L
+
     companion object {
         private val LAST_URL = stringPreferencesKey("last_url")
+        private val TMDB_API_KEY = stringPreferencesKey("tmdb_api_key")
+        private val LEGACY_MIGRATED = booleanPreferencesKey("history_migrated_v1")
+
+        // Retained so a future migration could reference the old key shape.
+        @Suppress("unused")
+        private fun legacyPositionKey(uri: String) =
+            longPreferencesKey("$LEGACY_POSITION_PREFIX${uri.hashCode()}")
 
         @Volatile
         private var instance: PlayerPrefs? = null
