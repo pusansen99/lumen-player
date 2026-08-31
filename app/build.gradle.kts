@@ -92,6 +92,7 @@ android {
 
     testOptions {
         unitTests.isReturnDefaultValues = true
+        unitTests.isIncludeAndroidResources = true
     }
 
     lint {
@@ -151,6 +152,11 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
+    implementation(libs.coil.video)
+
     testImplementation(libs.junit)
     testImplementation(libs.org.json) // real org.json for unit tests (android.jar ships stubs)
+    testImplementation(libs.robolectric)
 }
