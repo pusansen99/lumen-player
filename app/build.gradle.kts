@@ -115,10 +115,13 @@ android {
         schemaDirectory("$projectDir/schemas")
     }
 
-    // Room's MigrationTestHelper loads the exported schema JSONs from the merged
-    // assets folder. Robolectric unit tests read the debug variant's merged
-    // assets, and the Room Gradle plugin only wires schemas into androidTest, so
-    // add them to the debug asset set here (kept out of the release APK).
+    // Room's MigrationTestHelper (Android/Robolectric variant) can only load the
+    // exported schema JSONs from the merged assets folder -- Room 2.8.4 has no
+    // constructor that reads them from an on-disk directory. Robolectric unit
+    // tests read the debug variant's merged assets, so expose the schemas to the
+    // debug asset set. Debug-only, so they stay out of the release APK; the Room
+    // Gradle plugin does not register app/schemas as an androidTest asset source
+    // in this setup (copyRoomSchemas is NO-SOURCE), so there is no merge clash.
     sourceSets.getByName("debug").assets.srcDir("$projectDir/schemas")
 }
 
@@ -129,14 +132,16 @@ kotlin {
     }
 }
 
-// Robolectric's SDK 36 sandbox requires a Java 21 runtime (the app's minSdk is 36,
-// so lower Robolectric SDKs can't parse the test manifest). Run unit tests on 21.
+// Robolectric's SDK 36 sandbox requires a Java 21 runtime; app compilation stays on 17.
+// (minSdk 36 rules out an older Robolectric SDK whose manifest parser would accept it.)
 tasks.withType<Test>().configureEach {
-    javaLauncher.set(
-        javaToolchains.launcherFor {
-            languageVersion.set(JavaLanguageVersion.of(21))
-        }
-    )
+    if (name == "testDebugUnitTest") {
+        javaLauncher.set(
+            javaToolchains.launcherFor {
+                languageVersion.set(JavaLanguageVersion.of(21))
+            }
+        )
+    }
 }
 
 dependencies {
