@@ -59,14 +59,14 @@ class PlayerPrefs private constructor(private val appContext: Context) {
         }
     }
 
-    // Temporary stubs for PlayerScreen.kt until Task 8 updates the call sites.
-    // These are no-ops to allow the build to compile.
-    @Deprecated("Moved to Room; removed in favor of HistoryRepository")
+    // TODO(Task 8): delete this once PlayerScreen.kt calls HistoryRepository instead of PlayerPrefs for resume state.
+    @Deprecated("Temporary no-op bridge until Task 8 repoints PlayerScreen at HistoryRepository; delete then.")
     fun savePosition(uri: String, positionMs: Long, durationMs: Long) {
         // No-op: old per-video resume positions are no longer stored here
     }
 
-    @Deprecated("Moved to Room; removed in favor of HistoryRepository")
+    // TODO(Task 8): delete this once PlayerScreen.kt calls HistoryRepository instead of PlayerPrefs for resume state.
+    @Deprecated("Temporary no-op bridge until Task 8 repoints PlayerScreen at HistoryRepository; delete then.")
     suspend fun getPosition(uri: String): Long = 0L
 
     companion object {
@@ -74,6 +74,7 @@ class PlayerPrefs private constructor(private val appContext: Context) {
         private val TMDB_API_KEY = stringPreferencesKey("tmdb_api_key")
         private val LEGACY_MIGRATED = booleanPreferencesKey("history_migrated_v1")
 
+        // TODO(Task 8): delete this once PlayerScreen.kt calls HistoryRepository instead of PlayerPrefs for resume state.
         // Retained so a future migration could reference the old key shape.
         @Suppress("unused")
         private fun legacyPositionKey(uri: String) =
