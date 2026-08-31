@@ -32,7 +32,9 @@ JAVA_HOME=$(/usr/libexec/java_home -v 21) ./gradlew installDebug   # device/emul
 | UI | `PlayerSurface` + custom cinematic overlay: gradient scrims, accent scrubber with buffered track, tabular times; forced landscape while playing; immersive |
 | Gestures | tap = controls · double-tap sides = ±10s · horizontal drag = scrub w/ preview · left/right edge vertical drag = brightness / volume (dead zone + haptic) |
 | Tracks | audio / subtitle / video picker; subtitles start off; transparent caption style; adjustable subtitle size |
-| Resume | per-URL position (DataStore), "Resumed from …" chip; last URL pre-filled in the picker |
+| Library | Home screen "Continue watching" + full history (Room); every play — URL, in-app file, or "Open with" from another app — is recorded and resumable |
+| Resume | per-video position; "Resumed from …" chip; survives app-swipe (written on pause/stop) |
+| Settings | TMDB API key field (metadata matching lands in a later update) |
 | Errors | mapped `PlaybackException` card with Retry |
 | Format badge | brief HDR / codec / resolution / audio chip at start |
 | Updates | on launch, checks `github.com/<UPDATE_REPO>/releases/latest`; downloads + installs a newer APK |

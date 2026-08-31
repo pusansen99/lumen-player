@@ -125,6 +125,7 @@ fun PlayerScreen(
 
     val updateController = rememberUpdateController()
     LaunchedEffect(Unit) { updateController.checkOnce() }
+    LaunchedEffect(Unit) { prefs.migrateLegacyResumeData() }
     UpdateDialog(updateController)
 
     // A video handed in from another app ("Open with" / share) plays immediately.
