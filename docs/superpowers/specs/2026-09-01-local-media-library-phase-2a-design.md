@@ -202,13 +202,23 @@ interface LibraryDao {
     fun observeFolderRows(treeUri: String): Flow<List<LibraryVideoRow>>
 
     @Transaction
-    suspend fun applyScan(treeUri: String, found: List<LibraryVideo>, scannedAt: Long) {
-        upsertVideos(found)
-        deleteVideosNotIn(treeUri, found.map { it.documentUri })
-        setFolderScanned(treeUri, scannedAt, found.size)
+    suspend fun applyScan(
+        treeUri: String,
+        upsert: List<LibraryVideo>,   // diffVideos output — new + changed rows only
+        keepUris: List<String>,       // EVERY found documentUri (changed AND unchanged)
+        scannedAt: Long,
+    ) {
+        if (upsert.isNotEmpty()) upsertVideos(upsert)
+        deleteVideosNotIn(treeUri, keepUris)
+        setFolderScanned(treeUri, scannedAt, keepUris.size)
     }
 }
 ```
+
+> `keepUris` is the full set of `documentUri`s the scan found, so
+> `deleteVideosNotIn` removes only genuinely-gone files and leaves
+> unchanged rows alone. `upsert` is the trimmed `diffVideos` list.
+> `videoCount` = `keepUris.size`.
 
 `LibraryVideoRow` — a POJO (not `@Embedded`, to keep the join columns
 flat and nullable): `@ColumnInfo` names `h_positionMs` etc., mapped to a
@@ -286,8 +296,10 @@ suspend fun rescanAll()
 - `result = FolderScanner.scan(appContext.contentResolver, folder)`.
 - On `result is ScanOutcome.PermissionLost` → return it (don't wipe the
   folder's rows — the grant may come back).
-- On `Ok(found)` → `dao.applyScan(treeUri, found, now)`; return
-  `Ok(found.size)`.
+- On `Ok(found)` →
+  `val (upsert, _) = diffVideos(dao.videosInFolder(treeUri), found)`;
+  `dao.applyScan(treeUri, upsert = upsert, keepUris = found.map { it.documentUri }, scannedAt = now)`;
+  return `Ok(found.size)`.
 
 `ScanOutcome { data class Ok(count: Int); object PermissionLost; object Empty }`.
 
@@ -350,10 +362,10 @@ where `DiffResult(upsert: List<LibraryVideo>, deleteUris: List<String>)`:
 - `deleteUris` = `existing` uris not in `found`.
 - Unchanged rows are neither upserted nor deleted.
 
-`LibraryRepository` uses `diffVideos` to compute the arg to
-`dao.applyScan` (so `applyScan` gets `upsert` list, not the full
-`found`); `deleteVideosNotIn` already covers deletion by "keep" set, so
-`applyScan` stays as written and the diff only trims the upsert list.
+`LibraryRepository.rescan` calls `diffVideos(existing, found)` for the
+`upsert` list and passes `found.map { it.documentUri }` as `keepUris`
+(see the `applyScan` signature above) — unchanged rows are kept, gone
+files deleted, `videoCount = keepUris.size`.
 
 ### Tests
 
