@@ -1,7 +1,9 @@
 package com.lumen.player.library
 
 import android.content.Context
+import android.content.Intent
 import android.util.Log
+import androidx.core.net.toUri
 import com.lumen.player.library.data.HistoryDao
 import com.lumen.player.library.data.LumenDatabase
 import com.lumen.player.library.data.PlaybackHistoryEntry
@@ -14,11 +16,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import java.io.File
 
 private const val TAG = "HistoryRepository"
 
 /** Records and exposes per-video playback history. Mirrors [com.lumen.player.player.PlayerPrefs.get]. */
-class HistoryRepository private constructor(private val dao: HistoryDao) {
+class HistoryRepository private constructor(
+    private val dao: HistoryDao,
+    private val appContext: Context,
+) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -97,8 +103,32 @@ class HistoryRepository private constructor(private val dao: HistoryDao) {
         dao.upsert(existing.copy(thumbnailPath = path))
     }
 
-    suspend fun forget(rawUri: String) = dao.delete(normalizeMediaUri(rawUri))
-    suspend fun clearAll() = dao.clear()
+    /** Drops the row and, with it, the persistable read grant and the cached poster JPEG. */
+    suspend fun forget(rawUri: String) {
+        val uri = normalizeMediaUri(rawUri)
+        releasePersistableGrant(uri)
+        runCatching { File(File(appContext.filesDir, THUMB_DIR), thumbFileName(uri)).delete() }
+        dao.delete(uri)
+    }
+
+    /** Wipes every row, releasing all persistable read grants and deleting the whole thumb cache. */
+    suspend fun clearAll() {
+        dao.allUris().forEach { releasePersistableGrant(it) }
+        runCatching { File(appContext.filesDir, THUMB_DIR).deleteRecursively() }
+        dao.clear()
+    }
+
+    /** Best-effort release of a `content://` read grant taken when the video was first opened. */
+    private fun releasePersistableGrant(normalizedUri: String) {
+        val uri = normalizedUri.toUri()
+        if (uri.scheme != "content") return
+        runCatching {
+            appContext.contentResolver.releasePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION,
+            )
+        }
+    }
     suspend fun setFinished(rawUri: String, finished: Boolean) =
         dao.setFinished(normalizeMediaUri(rawUri), finished)
     suspend fun restart(rawUri: String) = dao.restart(normalizeMediaUri(rawUri))
@@ -109,8 +139,10 @@ class HistoryRepository private constructor(private val dao: HistoryDao) {
 
         fun get(context: Context): HistoryRepository =
             instance ?: synchronized(this) {
-                instance ?: HistoryRepository(LumenDatabase.get(context).history())
-                    .also { instance = it }
+                instance ?: HistoryRepository(
+                    LumenDatabase.get(context).history(),
+                    context.applicationContext,
+                ).also { instance = it }
             }
     }
 }

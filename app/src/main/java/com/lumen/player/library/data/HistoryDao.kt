@@ -29,6 +29,9 @@ interface HistoryDao {
     @Query("SELECT * FROM playback_history ORDER BY lastPlayedAt DESC")
     fun observeAll(): Flow<List<PlaybackHistoryEntry>>
 
+    @Query("SELECT uri FROM playback_history")
+    suspend fun allUris(): List<String>
+
     @Query("DELETE FROM playback_history WHERE uri = :uri")
     suspend fun delete(uri: String)
 

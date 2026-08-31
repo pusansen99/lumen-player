@@ -1,6 +1,7 @@
 package com.lumen.player.library.data
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /** Distance from the end within which a video counts as "finished" and drops out of Continue Watching. */
@@ -10,7 +11,7 @@ const val NEAR_EDGE_MS = 5_000L
  * One row per distinct video the user has played. The primary key is [normalizeMediaUri] of the
  * source URI, so the same video resumes whether it was opened from the play bar or an external intent.
  */
-@Entity(tableName = "playback_history")
+@Entity(tableName = "playback_history", indices = [Index("lastPlayedAt")])
 data class PlaybackHistoryEntry(
     @PrimaryKey val uri: String,
     /** [SourceType] name. */

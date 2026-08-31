@@ -13,7 +13,9 @@ import java.io.File
 import java.io.FileOutputStream
 
 private const val TAG = "Thumbnailer"
-private const val THUMB_DIR = "thumbs"
+
+/** Sub-directory of `filesDir` holding cached poster JPEGs. Shared with [HistoryRepository] cleanup. */
+internal const val THUMB_DIR = "thumbs"
 private const val TARGET_WIDTH = 320
 private const val JPEG_QUALITY = 80
 

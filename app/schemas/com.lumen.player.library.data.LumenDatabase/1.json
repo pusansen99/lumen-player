@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "aac1311201fb4410d7a18d0644ae2141",
+    "identityHash": "70d29a021a110e2b0a3fe3ed4b6d100b",
     "entities": [
       {
         "tableName": "playback_history",
@@ -72,12 +72,23 @@
           "columnNames": [
             "uri"
           ]
-        }
+        },
+        "indices": [
+          {
+            "name": "index_playback_history_lastPlayedAt",
+            "unique": false,
+            "columnNames": [
+              "lastPlayedAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_playback_history_lastPlayedAt` ON `${TABLE_NAME}` (`lastPlayedAt`)"
+          }
+        ]
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'aac1311201fb4410d7a18d0644ae2141')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '70d29a021a110e2b0a3fe3ed4b6d100b')"
     ]
   }
 }
