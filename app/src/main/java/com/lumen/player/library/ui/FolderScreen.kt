@@ -167,7 +167,14 @@ fun FolderScreen(
                         interactionSource = remember { MutableInteractionSource() },
                     ) { sheetRow = null },
             )
-            Box(Modifier.align(Alignment.BottomCenter)) {
+            Box(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() },
+                    ) { /* consume — panel taps must not reach the dismiss scrim */ },
+            ) {
                 DetailSheet(row = r, onPlay = onPlay, onDismiss = { sheetRow = null })
             }
         }
