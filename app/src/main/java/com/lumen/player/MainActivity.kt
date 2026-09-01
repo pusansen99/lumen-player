@@ -13,7 +13,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.IntentCompat
+import coil3.SingletonImageLoader
 import com.lumen.player.library.data.SourceType
+import com.lumen.player.library.ui.LumenImageLoader
 import com.lumen.player.player.PlayerScreen
 import com.lumen.player.ui.theme.LumenTheme
 
@@ -31,6 +33,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        SingletonImageLoader.setSafe { LumenImageLoader.get(it) }
         incoming = extractVideo(intent)
         setContent {
             LumenTheme {
