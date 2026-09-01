@@ -15,7 +15,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,11 +25,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.text.format.Formatter
-import com.lumen.player.library.HistoryRepository
 import com.lumen.player.library.data.LibraryVideoRow
 import com.lumen.player.library.data.SourceType
 import com.lumen.player.player.formatTime
-import kotlinx.coroutines.launch
 
 private val Scrim = Color(0xCC000000)
 private val Panel = Color(0xFF121216)
@@ -42,10 +39,10 @@ private val TextSecondary = Color(0xFFA1A1AA)
 fun DetailSheet(
     row: LibraryVideoRow,
     onPlay: (rawUri: String, label: String, type: SourceType, hasPersistedPermission: Boolean) -> Unit,
+    onPlayFromStart: (rawUri: String, label: String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     val label = row.episodeLabel()
 
     Box(
@@ -83,8 +80,7 @@ fun DetailSheet(
                     }) { Text("Resume from ${formatTime(row.positionMs)}") }
                 }
                 OutlinedButton(onClick = {
-                    scope.launch { HistoryRepository.get(context).restart(row.documentUri) }
-                    onPlay(row.documentUri, label, SourceType.SAF_FILE, true)
+                    onPlayFromStart(row.documentUri, label)
                     onDismiss()
                 }) { Text("Play from start") }
             }

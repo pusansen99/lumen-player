@@ -58,6 +58,7 @@ private val TextSecondary = Color(0xFFA1A1AA)
 fun FolderScreen(
     treeUri: String,
     onPlay: (rawUri: String, label: String, type: SourceType, hasPersistedPermission: Boolean) -> Unit,
+    onPlayFromStart: (rawUri: String, label: String) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -175,7 +176,12 @@ fun FolderScreen(
                         interactionSource = remember { MutableInteractionSource() },
                     ) { /* consume — panel taps must not reach the dismiss scrim */ },
             ) {
-                DetailSheet(row = r, onPlay = onPlay, onDismiss = { sheetRow = null })
+                DetailSheet(
+                    row = r,
+                    onPlay = onPlay,
+                    onPlayFromStart = onPlayFromStart,
+                    onDismiss = { sheetRow = null },
+                )
             }
         }
     }

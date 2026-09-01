@@ -36,6 +36,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -74,6 +75,7 @@ import com.lumen.player.update.UpdateDialog
 import com.lumen.player.update.rememberUpdateController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -120,6 +122,8 @@ fun PlayerScreen(
     val context = LocalContext.current
     val prefs = remember { PlayerPrefs.get(context) }
     val lastUrl by prefs.lastUrl.collectAsState("")
+    // Lives at PlayerScreen scope, so a pre-play reset survives the branch swapping away.
+    val screenScope = rememberCoroutineScope()
 
     var sourceUri by rememberSaveable { mutableStateOf<String?>(null) }
     var sourceLabel by rememberSaveable { mutableStateOf("") }
@@ -190,7 +194,19 @@ fun PlayerScreen(
                         sourceTypeName = type.name
                         hasPersistedPermission = hasPerm
                     },
+                    onPlayFromStart = { value, label ->
+                        // Reset the stored position BEFORE navigating: startSession must not
+                        // observe the old resume point (Compose scope here outlives the branch).
+                        screenScope.launch {
+                            HistoryRepository.get(context).restart(value)
+                            sourceUri = value
+                            sourceLabel = label
+                            sourceTypeName = SourceType.SAF_FILE.name
+                            hasPersistedPermission = true
+                        }
+                    },
                     onBack = { homeRoute = HomeRoute.Library },
+                    modifier = Modifier.safeDrawingPadding(),
                 )
             }
         } else {
