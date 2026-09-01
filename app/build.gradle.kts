@@ -183,4 +183,5 @@ dependencies {
     testImplementation(libs.androidx.room.testing)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.test.runner)
+    testImplementation(libs.mockito.kotlin)
 }

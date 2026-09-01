@@ -1,6 +1,14 @@
 package com.lumen.player.library.scan
 
+import android.content.ContentResolver
+import android.net.Uri
+import android.provider.DocumentsContract
+import android.util.Log
+import androidx.core.net.toUri
+import com.lumen.player.library.data.LibraryFolder
 import com.lumen.player.library.data.LibraryVideo
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 data class EpisodeHint(
     val showKey: String?,
@@ -81,4 +89,90 @@ fun diffVideos(existing: List<LibraryVideo>, found: List<LibraryVideo>): DiffRes
     }
     val deleteUris = existing.map { it.documentUri }.filter { it !in foundUris }
     return DiffResult(upsert, deleteUris)
+}
+
+sealed interface ScanOutcome {
+    data class Ok(val found: List<LibraryVideo>) : ScanOutcome
+    data object PermissionLost : ScanOutcome
+}
+
+private const val TAG = "FolderScanner"
+private const val MAX_DEPTH = 12
+private const val MAX_FILES = 20_000
+private val VIDEO_EXT = setOf("mkv", "mp4", "m4v", "webm", "mov", "avi", "ts", "m3u8", "mpd")
+
+internal fun childrenUriFor(treeUri: Uri, parentDocId: String): Uri =
+    DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, parentDocId)
+
+object FolderScanner {
+
+    suspend fun scan(resolver: ContentResolver, folder: LibraryFolder): ScanOutcome =
+        withContext(Dispatchers.IO) {
+            val treeUri = folder.treeUri.toUri()
+            val rootId = DocumentsContract.getTreeDocumentId(treeUri)
+            val projection = arrayOf(
+                DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                DocumentsContract.Document.COLUMN_MIME_TYPE,
+                DocumentsContract.Document.COLUMN_SIZE,
+                DocumentsContract.Document.COLUMN_LAST_MODIFIED,
+            )
+            val found = ArrayList<LibraryVideo>()
+            val visited = HashSet<String>()
+            val queue = ArrayDeque<Pair<String, List<String>>>()   // (documentId, pathSegments)
+            queue += rootId to emptyList()
+            var first = true
+
+            while (queue.isNotEmpty()) {
+                val (docId, segments) = queue.removeFirst()
+                if (!visited.add(docId)) continue
+                if (segments.size > MAX_DEPTH) continue
+                val childrenUri = childrenUriFor(treeUri, docId)
+                val cursor = runCatching {
+                    resolver.query(childrenUri, projection, null, null, null)
+                }.getOrNull()
+                if (cursor == null) {
+                    if (first) return@withContext ScanOutcome.PermissionLost
+                    else continue
+                }
+                first = false
+                cursor.use { c ->
+                    val idI = c.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
+                    val nameI = c.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+                    val mimeI = c.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_MIME_TYPE)
+                    val sizeI = c.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_SIZE)
+                    val modI = c.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_LAST_MODIFIED)
+                    while (c.moveToNext()) {
+                        val childId = c.getString(idI) ?: continue
+                        val name = c.getString(nameI) ?: continue
+                        val mime = c.getString(mimeI) ?: ""
+                        if (mime == DocumentsContract.Document.MIME_TYPE_DIR) {
+                            queue += childId to (segments + name)
+                        } else if (isVideo(mime, name)) {
+                            if (found.size >= MAX_FILES) {
+                                Log.w(TAG, "hit MAX_FILES for ${folder.treeUri}")
+                                return@use
+                            }
+                            val hint = episodeHints(name, segments)
+                            found += LibraryVideo(
+                                documentUri = DocumentsContract
+                                    .buildDocumentUriUsingTree(treeUri, childId).toString(),
+                                folderTreeUri = folder.treeUri,
+                                displayName = name,
+                                sizeBytes = if (c.isNull(sizeI)) 0L else c.getLong(sizeI),
+                                lastModified = if (c.isNull(modI)) 0L else c.getLong(modI),
+                                relativePath = segments.joinToString("/"),
+                                showKey = hint.showKey,
+                                seasonNumber = hint.seasonNumber,
+                                episodeNumber = hint.episodeNumber,
+                            )
+                        }
+                    }
+                }
+            }
+            ScanOutcome.Ok(found)
+        }
+
+    private fun isVideo(mime: String, name: String): Boolean =
+        mime.startsWith("video/") || name.substringAfterLast('.', "").lowercase() in VIDEO_EXT
 }
