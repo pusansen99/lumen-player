@@ -66,6 +66,7 @@ import androidx.media3.ui.compose.state.rememberProgressStateWithTickInterval
 import com.lumen.player.library.HistoryRepository
 import com.lumen.player.library.captureFrame
 import com.lumen.player.library.data.SourceType
+import com.lumen.player.library.ui.FolderScreen
 import com.lumen.player.library.ui.HistoryScreen
 import com.lumen.player.library.ui.LibraryScreen
 import com.lumen.player.library.ui.SettingsScreen
@@ -77,7 +78,7 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 
 /** Which home destination shows while no video is playing. */
-enum class HomeRoute { Library, History, Settings }
+enum class HomeRoute { Library, History, Settings, Folder }
 
 private const val AUTO_HIDE_MS = 3_000L
 private const val HUD_HIDE_MS = 700L
@@ -125,6 +126,7 @@ fun PlayerScreen(
     var sourceTypeName by rememberSaveable { mutableStateOf(SourceType.URL.name) }
     var hasPersistedPermission by rememberSaveable { mutableStateOf(true) }
     var homeRoute by rememberSaveable { mutableStateOf(HomeRoute.Library) }
+    var folderRouteUri by rememberSaveable { mutableStateOf<String?>(null) }
 
     val updateController = rememberUpdateController()
     LaunchedEffect(Unit) { updateController.checkOnce() }
@@ -161,6 +163,7 @@ fun PlayerScreen(
                     },
                     onOpenHistory = { homeRoute = HomeRoute.History },
                     onOpenSettings = { homeRoute = HomeRoute.Settings },
+                    onOpenFolder = { uri -> folderRouteUri = uri; homeRoute = HomeRoute.Folder },
                     modifier = Modifier.safeDrawingPadding(),
                 )
                 HomeRoute.History -> HistoryScreen(
@@ -177,6 +180,17 @@ fun PlayerScreen(
                 HomeRoute.Settings -> SettingsScreen(
                     onBack = { homeRoute = HomeRoute.Library },
                     modifier = Modifier.safeDrawingPadding(),
+                )
+                HomeRoute.Folder -> FolderScreen(
+                    treeUri = folderRouteUri.orEmpty(),
+                    onPlay = { value, label, type, hasPerm ->
+                        if (value.startsWith("http", ignoreCase = true)) prefs.setLastUrl(value)
+                        sourceUri = value
+                        sourceLabel = label
+                        sourceTypeName = type.name
+                        hasPersistedPermission = hasPerm
+                    },
+                    onBack = { homeRoute = HomeRoute.Library },
                 )
             }
         } else {

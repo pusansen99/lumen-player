@@ -2,7 +2,9 @@ package com.lumen.player.library.ui
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +21,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -26,6 +29,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -40,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lumen.player.library.HistoryRepository
@@ -49,17 +54,41 @@ import kotlinx.coroutines.launch
 private val TextPrimary = Color(0xFFF4F4F5)
 private val TextSecondary = Color(0xFFA1A1AA)
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun LibraryScreen(
     lastUrl: String,
     onPlay: (rawUri: String, label: String, type: SourceType, hasPersistedPermission: Boolean) -> Unit,
     onOpenHistory: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenFolder: (treeUri: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val history = remember { HistoryRepository.get(context) }
     val scope = rememberCoroutineScope()
+
+    val libraryRepo = remember { com.lumen.player.library.LibraryRepository.get(context) }
+    val folders by libraryRepo.folders.collectAsState(emptyList())
+    val scanningFolders by libraryRepo.scanning.collectAsState()
+    val folderErrors by libraryRepo.foldersWithError.collectAsState()
+    val addFolderLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocumentTree(),
+    ) { uri ->
+        if (uri != null) scope.launch {
+            when (libraryRepo.addFolder(uri)) {
+                is com.lumen.player.library.LibraryRepository.AddFolderResult.PermissionDenied ->
+                    android.widget.Toast.makeText(
+                        context,
+                        "Couldn't get lasting access to that folder.",
+                        android.widget.Toast.LENGTH_SHORT,
+                    ).show()
+                else -> {}
+            }
+        }
+    }
+    var folderMenuUri by remember { mutableStateOf<String?>(null) }
+    var confirmRemoveUri by remember { mutableStateOf<String?>(null) }
 
     val recentFlow = remember { history.recent(24) }
     val continueWatching by history.continueWatching.collectAsState(emptyList())
@@ -226,7 +255,72 @@ fun LibraryScreen(
                 }
             }
 
-            if (continueWatching.isEmpty() && recentOnly.isEmpty()) {
+            if (folders.isNotEmpty()) {
+                item {
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("Folders", color = TextPrimary, fontSize = 15.sp, modifier = Modifier.weight(1f))
+                        TextButton(onClick = { addFolderLauncher.launch(null) }) { Text("+ Add folder") }
+                    }
+                }
+                items(folders, key = { it.treeUri }) { folder ->
+                    val subtitle = when {
+                        folder.treeUri in folderErrors -> "Can't read — long-press to remove"
+                        folder.treeUri in scanningFolders -> "Scanning…"
+                        folder.videoCount == 0 && folder.lastScannedAt > 0L -> "No videos"
+                        folder.videoCount == 0 -> "Scanning…"
+                        else -> "${folder.videoCount} videos"
+                    }
+                    Box {
+                        Row(
+                            Modifier.fillMaxWidth()
+                                .combinedClickable(
+                                    onClick = { onOpenFolder(folder.treeUri) },
+                                    onLongClick = { folderMenuUri = folder.treeUri },
+                                )
+                                .padding(horizontal = 20.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            Icon(Icons.Filled.FolderOpen, contentDescription = null, tint = TextSecondary)
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    folder.displayName, color = TextPrimary, fontSize = 13.sp,
+                                    maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                )
+                                Text(subtitle, color = TextSecondary, fontSize = 11.sp)
+                            }
+                        }
+                        if (folderMenuUri == folder.treeUri) {
+                            DropdownMenu(expanded = true, onDismissRequest = { folderMenuUri = null }) {
+                                DropdownMenuItem(text = { Text("Rescan") }, onClick = {
+                                    folderMenuUri = null
+                                    scope.launch { libraryRepo.rescan(folder.treeUri) }
+                                })
+                                DropdownMenuItem(text = { Text("Remove folder") }, onClick = {
+                                    folderMenuUri = null
+                                    confirmRemoveUri = folder.treeUri
+                                })
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Folders section header with just the add button, so the entry point exists on a fresh install
+                item {
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("Folders", color = TextPrimary, fontSize = 15.sp, modifier = Modifier.weight(1f))
+                        TextButton(onClick = { addFolderLauncher.launch(null) }) { Text("+ Add folder") }
+                    }
+                }
+            }
+
+            if (continueWatching.isEmpty() && recentOnly.isEmpty() && folders.isEmpty()) {
                 item {
                     Text(
                         "Videos you play show up here.",
@@ -235,6 +329,21 @@ fun LibraryScreen(
                     )
                 }
             }
+        }
+
+        confirmRemoveUri?.let { uri ->
+            AlertDialog(
+                onDismissRequest = { confirmRemoveUri = null },
+                title = { Text("Remove this folder?") },
+                text = { Text("Its videos leave the library. Watch history is kept.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        confirmRemoveUri = null
+                        scope.launch { libraryRepo.removeFolder(uri) }
+                    }) { Text("Remove") }
+                },
+                dismissButton = { TextButton(onClick = { confirmRemoveUri = null }) { Text("Cancel") } },
+            )
         }
     }
 }
