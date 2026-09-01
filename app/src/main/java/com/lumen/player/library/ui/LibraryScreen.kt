@@ -297,7 +297,7 @@ fun LibraryScreen(
                             DropdownMenu(expanded = true, onDismissRequest = { folderMenuUri = null }) {
                                 DropdownMenuItem(text = { Text("Rescan") }, onClick = {
                                     folderMenuUri = null
-                                    scope.launch { libraryRepo.rescan(folder.treeUri) }
+                                    libraryRepo.rescanInBackground(folder.treeUri)
                                 })
                                 DropdownMenuItem(text = { Text("Remove folder") }, onClick = {
                                     folderMenuUri = null

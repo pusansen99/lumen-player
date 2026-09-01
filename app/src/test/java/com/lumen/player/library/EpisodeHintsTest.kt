@@ -52,4 +52,11 @@ class EpisodeHintsTest {
     @Test fun showKeyNormalisation() {
         assertEquals("mr robot", hint("Mr. Robot - S01E01.mkv", listOf("Mr.  Robot!")).showKey)
     }
+
+    @Test fun rootLevelEpisodeHasNoShowKey() {
+        // No folder context and nothing before the SxxExx token -> showKey must be null, not "".
+        val h = hint("S01E01.mkv")
+        assertEquals(1, h.seasonNumber); assertEquals(1, h.episodeNumber)
+        assertNull(h.showKey)
+    }
 }

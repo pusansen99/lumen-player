@@ -13,6 +13,7 @@ import com.lumen.player.library.data.LumenDatabase
 import com.lumen.player.library.scan.FolderScanner
 import com.lumen.player.library.scan.ScanOutcome
 import com.lumen.player.library.scan.diffVideos
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -99,12 +100,23 @@ class LibraryRepository private constructor(
                     out
                 }
             }
+        } catch (c: CancellationException) {
+            throw c
         } catch (t: Throwable) {
+            // Surface the failure instead of faking an empty Ok: an Ok would run applyScan with
+            // no rows and leave LibraryScreen's subtitle stuck on "Scanning..." forever. Marking
+            // the folder as errored shows the "Can't read - long-press to remove" affordance.
             Log.w(TAG, "rescan failed for $treeUri", t)
-            ScanOutcome.Ok(emptyList())
+            _foldersWithError.update { it + treeUri }
+            ScanOutcome.PermissionLost
         } finally {
             _scanning.update { it - treeUri }
         }
+    }
+
+    /** Fire-and-forget rescan on the repository's own scope, so navigating away can't cancel it. */
+    fun rescanInBackground(treeUri: String) {
+        scope.launch { rescan(treeUri) }
     }
 
     suspend fun rescanAll() {

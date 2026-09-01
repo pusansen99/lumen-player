@@ -35,7 +35,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,7 +47,6 @@ import androidx.compose.ui.unit.sp
 import com.lumen.player.library.LibraryRepository
 import com.lumen.player.library.data.LibraryVideoRow
 import com.lumen.player.library.data.SourceType
-import kotlinx.coroutines.launch
 
 private val Accent = Color(0xFF4C8DFF)
 private val TextPrimary = Color(0xFFF4F4F5)
@@ -65,10 +63,14 @@ fun FolderScreen(
     BackHandler(onBack = onBack)
     val context = LocalContext.current
     val repo = remember { LibraryRepository.get(context) }
-    val scope = rememberCoroutineScope()
 
-    val folder by repo.observeFolder(treeUri).collectAsState(initial = null)
-    val rows by repo.folderRows(treeUri).collectAsState(initial = emptyList())
+    // Hold each Room Flow across recompositions; calling the repo inline builds a fresh
+    // Flow every pass, which re-keys collectAsState and restarts both collections (and the
+    // LEFT JOIN behind folderRows) on every sheet open/close, expand/collapse, scan tick.
+    val folderFlow = remember(treeUri) { repo.observeFolder(treeUri) }
+    val rowsFlow = remember(treeUri) { repo.folderRows(treeUri) }
+    val folder by folderFlow.collectAsState(initial = null)
+    val rows by rowsFlow.collectAsState(initial = emptyList())
     val scanning by repo.scanning.collectAsState()
     val contents = remember(rows) { groupFolder(rows) }
 
@@ -90,7 +92,7 @@ fun FolderScreen(
                 folder?.displayName ?: "Folder", color = TextPrimary, fontSize = 18.sp,
                 modifier = Modifier.weight(1f),
             )
-            TextButton(onClick = { scope.launch { repo.rescan(treeUri) } }) { Text("Rescan") }
+            TextButton(onClick = { repo.rescanInBackground(treeUri) }) { Text("Rescan") }
         }
 
         val isScanning = treeUri in scanning
@@ -101,7 +103,7 @@ fun FolderScreen(
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("No videos in this folder.", color = TextSecondary, fontSize = 13.sp)
-                        TextButton(onClick = { scope.launch { repo.rescan(treeUri) } }) { Text("Rescan") }
+                        TextButton(onClick = { repo.rescanInBackground(treeUri) }) { Text("Rescan") }
                     }
                 }
             else -> LazyVerticalGrid(

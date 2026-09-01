@@ -33,10 +33,10 @@ fun episodeHints(fileName: String, pathSegments: List<String>): EpisodeHint {
     val base = fileName.substringBeforeLast('.')
 
     SXXEXX.find(base)?.let { m ->
-        return EpisodeHint(showKeyFrom(base, pathSegments, m.range.first), m.groupValues[1].toInt(), m.groupValues[2].toInt())
+        return EpisodeHint(showKeyFrom(base, pathSegments, m.range.first).ifEmpty { null }, m.groupValues[1].toInt(), m.groupValues[2].toInt())
     }
     NXM.find(base)?.let { m ->
-        return EpisodeHint(showKeyFrom(base, pathSegments, m.range.first), m.groupValues[1].toInt(), m.groupValues[2].toInt())
+        return EpisodeHint(showKeyFrom(base, pathSegments, m.range.first).ifEmpty { null }, m.groupValues[1].toInt(), m.groupValues[2].toInt())
     }
     // Season folder fallback
     val seasonDirIdx = pathSegments.indexOfLast { SEASON_DIR.matches(it.trim()) }
@@ -140,8 +140,10 @@ object FolderScanner {
                     val idI = c.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
                     val nameI = c.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
                     val mimeI = c.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_MIME_TYPE)
-                    val sizeI = c.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_SIZE)
-                    val modI = c.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_LAST_MODIFIED)
+                    // SIZE and LAST_MODIFIED are optional in the DocumentsProvider contract; some
+                    // providers (cloud / USB / network) omit them. -1 means the column is absent.
+                    val sizeI = c.getColumnIndex(DocumentsContract.Document.COLUMN_SIZE)
+                    val modI = c.getColumnIndex(DocumentsContract.Document.COLUMN_LAST_MODIFIED)
                     while (c.moveToNext()) {
                         val childId = c.getString(idI) ?: continue
                         val name = c.getString(nameI) ?: continue
@@ -159,8 +161,8 @@ object FolderScanner {
                                     .buildDocumentUriUsingTree(treeUri, childId).toString(),
                                 folderTreeUri = folder.treeUri,
                                 displayName = name,
-                                sizeBytes = if (c.isNull(sizeI)) 0L else c.getLong(sizeI),
-                                lastModified = if (c.isNull(modI)) 0L else c.getLong(modI),
+                                sizeBytes = if (sizeI < 0 || c.isNull(sizeI)) 0L else c.getLong(sizeI),
+                                lastModified = if (modI < 0 || c.isNull(modI)) 0L else c.getLong(modI),
                                 relativePath = segments.joinToString("/"),
                                 showKey = hint.showKey,
                                 seasonNumber = hint.seasonNumber,
