@@ -1,5 +1,7 @@
 package com.lumen.player.library.scan
 
+import com.lumen.player.library.data.LibraryVideo
+
 data class EpisodeHint(
     val showKey: String?,
     val seasonNumber: Int?,
@@ -46,4 +48,37 @@ private fun showKeyFrom(base: String, pathSegments: List<String>, patternStart: 
     if (grandparent != null) return normaliseShowKey(grandparent)
     // no usable folder: use the file name up to the pattern
     return normaliseShowKey(base.substring(0, patternStart))
+}
+
+data class DiffResult(val upsert: List<LibraryVideo>, val deleteUris: List<String>)
+
+/**
+ * Compares a folder's stored rows against a fresh scan.
+ * `upsert` = new + changed rows (carrying forward the existing `metadataId`).
+ * `deleteUris` = stored `documentUri`s the scan no longer found.
+ * Unchanged rows appear in neither list.
+ */
+fun diffVideos(existing: List<LibraryVideo>, found: List<LibraryVideo>): DiffResult {
+    val byUri = existing.associateBy { it.documentUri }
+    val foundUris = HashSet<String>(found.size)
+    val upsert = ArrayList<LibraryVideo>()
+    for (f in found) {
+        foundUris += f.documentUri
+        val old = byUri[f.documentUri]
+        if (old == null) {
+            upsert += f
+        } else if (
+            old.sizeBytes != f.sizeBytes ||
+            old.lastModified != f.lastModified ||
+            old.relativePath != f.relativePath ||
+            old.displayName != f.displayName ||
+            old.showKey != f.showKey ||
+            old.seasonNumber != f.seasonNumber ||
+            old.episodeNumber != f.episodeNumber
+        ) {
+            upsert += f.copy(metadataId = old.metadataId)
+        }
+    }
+    val deleteUris = existing.map { it.documentUri }.filter { it !in foundUris }
+    return DiffResult(upsert, deleteUris)
 }
