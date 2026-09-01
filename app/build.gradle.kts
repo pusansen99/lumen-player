@@ -92,6 +92,7 @@ android {
 
     testOptions {
         unitTests.isReturnDefaultValues = true
+        unitTests.isIncludeAndroidResources = true
     }
 
     lint {
@@ -113,12 +114,33 @@ android {
     room {
         schemaDirectory("$projectDir/schemas")
     }
+
+    // Room's MigrationTestHelper (Android/Robolectric variant) can only load the
+    // exported schema JSONs from the merged assets folder -- Room 2.8.4 has no
+    // constructor that reads them from an on-disk directory. Robolectric unit
+    // tests read the debug variant's merged assets, so expose the schemas to the
+    // debug asset set. Debug-only, so they stay out of the release APK; the Room
+    // Gradle plugin does not register app/schemas as an androidTest asset source
+    // in this setup (copyRoomSchemas is NO-SOURCE), so there is no merge clash.
+    sourceSets.getByName("debug").assets.srcDir("$projectDir/schemas")
 }
 
 kotlin {
     jvmToolchain(17)
     compilerOptions {
         optIn.add("androidx.media3.common.util.UnstableApi")
+    }
+}
+
+// Robolectric's SDK 36 sandbox requires a Java 21 runtime; app compilation stays on 17.
+// (minSdk 36 rules out an older Robolectric SDK whose manifest parser would accept it.)
+tasks.withType<Test>().configureEach {
+    if (name == "testDebugUnitTest") {
+        javaLauncher.set(
+            javaToolchains.launcherFor {
+                languageVersion.set(JavaLanguageVersion.of(21))
+            }
+        )
     }
 }
 
@@ -147,10 +169,20 @@ dependencies {
 
     implementation(libs.okhttp)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.documentfile)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
+    implementation(libs.coil.video)
+
     testImplementation(libs.junit)
     testImplementation(libs.org.json) // real org.json for unit tests (android.jar ships stubs)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.room.testing)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.test.runner)
+    testImplementation(libs.mockito.kotlin)
 }

@@ -36,6 +36,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -66,6 +67,7 @@ import androidx.media3.ui.compose.state.rememberProgressStateWithTickInterval
 import com.lumen.player.library.HistoryRepository
 import com.lumen.player.library.captureFrame
 import com.lumen.player.library.data.SourceType
+import com.lumen.player.library.ui.FolderScreen
 import com.lumen.player.library.ui.HistoryScreen
 import com.lumen.player.library.ui.LibraryScreen
 import com.lumen.player.library.ui.SettingsScreen
@@ -73,11 +75,12 @@ import com.lumen.player.update.UpdateDialog
 import com.lumen.player.update.rememberUpdateController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
 /** Which home destination shows while no video is playing. */
-enum class HomeRoute { Library, History, Settings }
+enum class HomeRoute { Library, History, Settings, Folder }
 
 private const val AUTO_HIDE_MS = 3_000L
 private const val HUD_HIDE_MS = 700L
@@ -119,12 +122,15 @@ fun PlayerScreen(
     val context = LocalContext.current
     val prefs = remember { PlayerPrefs.get(context) }
     val lastUrl by prefs.lastUrl.collectAsState("")
+    // Lives at PlayerScreen scope, so a pre-play reset survives the branch swapping away.
+    val screenScope = rememberCoroutineScope()
 
     var sourceUri by rememberSaveable { mutableStateOf<String?>(null) }
     var sourceLabel by rememberSaveable { mutableStateOf("") }
     var sourceTypeName by rememberSaveable { mutableStateOf(SourceType.URL.name) }
     var hasPersistedPermission by rememberSaveable { mutableStateOf(true) }
     var homeRoute by rememberSaveable { mutableStateOf(HomeRoute.Library) }
+    var folderRouteUri by rememberSaveable { mutableStateOf<String?>(null) }
 
     val updateController = rememberUpdateController()
     LaunchedEffect(Unit) { updateController.checkOnce() }
@@ -161,6 +167,7 @@ fun PlayerScreen(
                     },
                     onOpenHistory = { homeRoute = HomeRoute.History },
                     onOpenSettings = { homeRoute = HomeRoute.Settings },
+                    onOpenFolder = { uri -> folderRouteUri = uri; homeRoute = HomeRoute.Folder },
                     modifier = Modifier.safeDrawingPadding(),
                 )
                 HomeRoute.History -> HistoryScreen(
@@ -175,6 +182,29 @@ fun PlayerScreen(
                     modifier = Modifier.safeDrawingPadding(),
                 )
                 HomeRoute.Settings -> SettingsScreen(
+                    onBack = { homeRoute = HomeRoute.Library },
+                    modifier = Modifier.safeDrawingPadding(),
+                )
+                HomeRoute.Folder -> FolderScreen(
+                    treeUri = folderRouteUri.orEmpty(),
+                    onPlay = { value, label, type, hasPerm ->
+                        if (value.startsWith("http", ignoreCase = true)) prefs.setLastUrl(value)
+                        sourceUri = value
+                        sourceLabel = label
+                        sourceTypeName = type.name
+                        hasPersistedPermission = hasPerm
+                    },
+                    onPlayFromStart = { value, label ->
+                        // Reset the stored position BEFORE navigating: startSession must not
+                        // observe the old resume point (Compose scope here outlives the branch).
+                        screenScope.launch {
+                            HistoryRepository.get(context).restart(value)
+                            sourceUri = value
+                            sourceLabel = label
+                            sourceTypeName = SourceType.SAF_FILE.name
+                            hasPersistedPermission = true
+                        }
+                    },
                     onBack = { homeRoute = HomeRoute.Library },
                     modifier = Modifier.safeDrawingPadding(),
                 )
