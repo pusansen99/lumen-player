@@ -21,6 +21,9 @@ interface LibraryDao {
     @Query("SELECT * FROM library_folder WHERE treeUri = :treeUri")
     suspend fun folder(treeUri: String): LibraryFolder?
 
+    @Query("SELECT * FROM library_folder")
+    suspend fun allFolders(): List<LibraryFolder>
+
     @Query("SELECT * FROM library_folder WHERE treeUri = :treeUri")
     fun observeFolder(treeUri: String): Flow<LibraryFolder?>
 
