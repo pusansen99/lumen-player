@@ -32,7 +32,7 @@ JAVA_HOME=$(/usr/libexec/java_home -v 21) ./gradlew installDebug   # device/emul
 | UI | `PlayerSurface` + custom cinematic overlay: gradient scrims, accent scrubber with buffered track, tabular times; forced landscape while playing; immersive |
 | Gestures | tap = controls · double-tap sides = ±10s · horizontal drag = scrub w/ preview · left/right edge vertical drag = brightness / volume (dead zone + haptic) |
 | Tracks | audio / subtitle / video picker; subtitles start off; transparent caption style; adjustable subtitle size |
-| Library | Home screen "Continue watching" + full history (Room); every play — URL, in-app file, or "Open with" from another app — is recorded and resumable |
+| Library | Home screen "Continue watching" + full history (Room); plus **device folders** you add via the system picker — browsed as a poster grid, TV files grouped show → season → episode |
 | Resume | per-video position; "Resumed from …" chip; survives app-swipe (written on pause/stop) |
 | Settings | TMDB API key field (metadata matching lands in a later update) |
 | Errors | mapped `PlaybackException` card with Retry |
@@ -45,6 +45,13 @@ HDR10 / HLG and single-layer Dolby Vision (profiles 5 / 8.1 / 9) play on a capab
 HDR10+ falls back to the HDR10 base layer when unsupported. Dual-layer Dolby Vision (4 / 7) plays as
 the HDR10/SDR base. Atmos / TrueHD are passthrough-only to a capable receiver, else decoded and
 downmixed. This is the platform decoder path, not app code.
+
+## Folder library
+
+Add device folders from the home screen ("+ Add folder"). Lumen scans
+them for video files (no `MediaStore`, no broad storage permission —
+only the SAF grant for folders you pick) and shows them as a grid.
+Metadata (real posters / titles from TMDB) lands in a later release.
 
 ## Optional source-provided sidecars
 
