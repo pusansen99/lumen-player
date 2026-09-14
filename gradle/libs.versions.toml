@@ -13,7 +13,7 @@ orgJson = "20260814"
 ksp = "2.3.11"
 room = "2.8.4"
 coil = "3.6.2"
-robolectric = "4.16.1"
+robolectric = "4.17"
 androidxTestCore = "1.7.0"
 androidxTestRunner = "1.7.0"
 
